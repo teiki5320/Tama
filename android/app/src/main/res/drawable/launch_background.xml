@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Splash : fond Tama #0B0B0F. Le logo centré sera ajouté ici
+     (bitmap gravity="center") quand l'asset définitif sera prêt. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/tama_background" />
+</layer-list>

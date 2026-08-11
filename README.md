@@ -10,6 +10,60 @@ Bunny Stream (HLS adaptatif) · Riverpod.
 Phase actuelle : MVP sans monétisation, centré sur la mesure de la rétention
 et du taux de complétion.
 
+## Lancer l'app
+
+```bash
+flutter pub get
+
+# Mode démo (aucun backend requis) : catalogue local de 8 séries,
+# progression et favoris pré-remplis, vidéo de démonstration.
+flutter run
+
+# Mode production : Supabase + Bunny Stream
+flutter run \
+  --dart-define=SUPABASE_URL=https://xxx.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY=... \
+  --dart-define=BUNNY_STREAM_LIBRARY_ID=... \
+  --dart-define=BUNNY_STREAM_CDN_HOSTNAME=vz-xxx.b-cdn.net
+```
+
+Sans `SUPABASE_URL`/`SUPABASE_ANON_KEY`, l'app bascule automatiquement en
+mode démo — pratique pour valider l'UX avant de brancher le backend.
+
+### Structure
+
+```
+lib/
+  main.dart
+  core/          # theme.dart (jetons), constantes, env, client supabase, router
+  models/        # series, episode, watch_progress
+  repositories/  # accès données (impl. Supabase + impl. démo), une classe par table
+  providers/     # riverpod (catalogue, progression, favoris, réglages, auth)
+  features/
+    home/        # accueil : bannière, rail « Reprendre », rails par genre
+    series/      # fiche série : grille d'épisodes, reprise, favori
+    player/      # player vertical : swipe, préchargement, enchaînement auto
+    favorites/   # ma liste : favoris + historique
+    settings/    # réglages : compte, données réduites, qualité, langue
+  services/      # analytics (batch 10 s), bunny (URLs HLS/MP4), connectivité
+```
+
+### Choix techniques clés
+
+- **Player** : `PageView` vertical ; seul l'épisode suivant est préchargé
+  (jamais plus), coupé en mode données réduites. Enchaînement automatique
+  en fin d'épisode, sauvegarde de progression toutes les 5 s et à la sortie.
+- **Analytics** : événements en file locale, envoyés par lots toutes les
+  10 s dans `analytics_events` (insertion anonyme autorisée, lecture
+  interdite par RLS). `v_retention` agrège démarrages, complétions et
+  décrochages par épisode.
+- **Zéro friction** : lecture immédiate sans compte ; la progression
+  anonyme vit en local et est synchronisée vers le compte à la connexion.
+  L'auth n'est demandée qu'au premier favori.
+- **Réseau dégradé** : HLS adaptatif via Bunny (qualité « Auto »),
+  renditions MP4 forcées en 480p/720p, polices embarquées (aucun
+  téléchargement au runtime), CanvasKit servi localement sur le web.
+
 ## Base de données (Supabase)
 
 Le schéma complet est dans [`supabase/migrations/20260811120000_initial_schema.sql`](supabase/migrations/20260811120000_initial_schema.sql).

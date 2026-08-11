@@ -1,0 +1,101 @@
+# Envoi TestFlight sans Mac : compile, signe (signature cloud automatique
+# via la clé API App Store Connect) et téléverse le build.
+#
+# Secrets requis (Settings → Secrets and variables → Actions) :
+#   ASC_KEY_ID       identifiant de la clé API App Store Connect
+#   ASC_ISSUER_ID    issuer ID de l'équipe (page des clés API)
+#   ASC_KEY_CONTENT  contenu du fichier .p8 encodé en base64
+#
+# Déclenchement manuel : onglet Actions → TestFlight → Run workflow.
+name: TestFlight
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build et envoi TestFlight
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Installation de Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Dépendances
+        run: flutter pub get
+
+      - name: Installation de la clé API App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+        run: |
+          mkdir -p "$HOME/private_keys"
+          echo "$ASC_KEY_CONTENT" | base64 --decode \
+            > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Compilation Flutter (sans signature)
+        run: |
+          flutter build ios --release --no-codesign \
+            --build-number=${{ github.run_number }}
+
+      - name: Archive signée (signature cloud automatique)
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/ios/Runner.xcarchive \
+            archive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM=K597U7X3FZ \
+            CODE_SIGN_STYLE=Automatic
+
+      - name: Export de l'IPA
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          xcodebuild \
+            -exportArchive \
+            -archivePath build/ios/Runner.xcarchive \
+            -exportOptionsPlist ios/ExportOptions.plist \
+            -exportPath build/ios/ipa \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - name: Envoi vers TestFlight
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          xcrun altool --upload-app --type ios \
+            -f build/ios/ipa/*.ipa \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID"
+
+      - name: IPA en artefact (dépannage)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tama-ipa
+          path: build/ios/ipa/*.ipa
+          if-no-files-found: ignore

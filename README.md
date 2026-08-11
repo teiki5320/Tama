@@ -30,6 +30,9 @@ flutter run \
 Sans `SUPABASE_URL`/`SUPABASE_ANON_KEY`, l'app bascule automatiquement en
 mode démo — pratique pour valider l'UX avant de brancher le backend.
 
+Distribution iOS : voir [docs/TESTFLIGHT.md](docs/TESTFLIGHT.md)
+(archivage Xcode, ou envoi automatisé via GitHub Actions sans Mac).
+
 ### Structure
 
 ```

@@ -98,7 +98,13 @@ macOS — gratuit sur ce repo public.
    |---|---|
    | `ASC_KEY_ID` | Key ID de la clé API |
    | `ASC_ISSUER_ID` | Issuer ID de l'équipe |
-   | `ASC_KEY_CONTENT` | contenu du `.p8` en base64 : `base64 -i AuthKey_XXX.p8` |
+   | `ASC_KEY_CONTENT` | contenu du fichier `.p8` |
+
+   Le `.p8` est un fichier texte : depuis un iPad, l'ouvrir dans Fichiers,
+   tout sélectionner, copier, coller dans le secret — de
+   `-----BEGIN PRIVATE KEY-----` à `-----END PRIVATE KEY-----` inclus.
+   La version encodée (`base64 -i AuthKey_XXX.p8`) est acceptée aussi,
+   le workflow reconnaît les deux formes.
 
 2. Onglet **Actions** → workflow **TestFlight** → **Run workflow**.
 3. À la fin (~15-20 min), le build apparaît dans App Store Connect →

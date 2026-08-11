@@ -40,8 +40,21 @@ jobs:
           ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
         run: |
           mkdir -p "$HOME/private_keys"
-          echo "$ASC_KEY_CONTENT" | base64 --decode \
-            > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          KEY_PATH="$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          # Le secret accepte les deux formes : le contenu brut du .p8
+          # (copier-coller direct, seule option praticable depuis un iPad)
+          # ou sa version encodée en base64.
+          if printf '%s' "$ASC_KEY_CONTENT" | grep -q 'BEGIN PRIVATE KEY'; then
+            printf '%s\n' "$ASC_KEY_CONTENT" > "$KEY_PATH"
+          else
+            printf '%s' "$ASC_KEY_CONTENT" | base64 --decode > "$KEY_PATH"
+          fi
+          # Sans cette vérification, une clé mal copiée ne casserait que
+          # bien plus loin, avec un message d'erreur incompréhensible.
+          openssl pkey -in "$KEY_PATH" -noout 2>/dev/null || {
+            echo "::error::Clé .p8 illisible — revérifier le secret ASC_KEY_CONTENT"
+            exit 1
+          }
 
       - name: Compilation Flutter (sans signature)
         run: |

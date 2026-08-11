@@ -4,13 +4,20 @@
 # Secrets requis (Settings → Secrets and variables → Actions) :
 #   ASC_KEY_ID       identifiant de la clé API App Store Connect
 #   ASC_ISSUER_ID    issuer ID de l'équipe (page des clés API)
-#   ASC_KEY_CONTENT  contenu du fichier .p8 encodé en base64
+#   ASC_KEY_CONTENT  contenu du fichier .p8 (brut ou base64)
 #
-# Déclenchement manuel : onglet Actions → TestFlight → Run workflow.
+# Déclenchement : onglet Actions → TestFlight → Run workflow.
+# L'option « essai à blanc » compile sans signer ni téléverser : elle ne
+# demande aucun secret et sert à valider la chaîne de compilation.
 name: TestFlight
 
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Essai à blanc (compile seulement, sans secrets)"
+        type: boolean
+        default: false
 
 concurrency:
   group: testflight
@@ -19,11 +26,16 @@ concurrency:
 jobs:
   deploy:
     name: Build et envoi TestFlight
-    runs-on: macos-15
+    runs-on: macos-latest
     timeout-minutes: 60
     steps:
       - name: Récupération du code
         uses: actions/checkout@v4
+
+      - name: Environnement (traçabilité en cas d'échec)
+        run: |
+          echo "macOS : $(sw_vers -productVersion)"
+          echo "Xcode : $(xcodebuild -version | head -1)"
 
       - name: Installation de Flutter
         uses: subosito/flutter-action@v2
@@ -34,11 +46,23 @@ jobs:
       - name: Dépendances
         run: flutter pub get
 
+      # Étape la plus longue et la plus fragile : placée avant tout ce qui
+      # touche aux secrets, pour qu'un essai à blanc la valide vraiment.
+      - name: Compilation Flutter (sans signature)
+        run: |
+          flutter build ios --release --no-codesign \
+            --build-number=${{ github.run_number }}
+
       - name: Installation de la clé API App Store Connect
+        if: ${{ !inputs.dry_run }}
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
         run: |
+          if [ -z "$ASC_KEY_ID" ] || [ -z "$ASC_KEY_CONTENT" ]; then
+            echo "::error::Secrets manquants — ajouter ASC_KEY_ID, ASC_ISSUER_ID et ASC_KEY_CONTENT dans Settings → Secrets and variables → Actions."
+            exit 1
+          fi
           mkdir -p "$HOME/private_keys"
           KEY_PATH="$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
           # Le secret accepte les deux formes : le contenu brut du .p8
@@ -56,12 +80,8 @@ jobs:
             exit 1
           }
 
-      - name: Compilation Flutter (sans signature)
-        run: |
-          flutter build ios --release --no-codesign \
-            --build-number=${{ github.run_number }}
-
       - name: Archive signée (signature cloud automatique)
+        if: ${{ !inputs.dry_run }}
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -81,6 +101,7 @@ jobs:
             CODE_SIGN_STYLE=Automatic
 
       - name: Export de l'IPA
+        if: ${{ !inputs.dry_run }}
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -96,6 +117,7 @@ jobs:
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
 
       - name: Envoi vers TestFlight
+        if: ${{ !inputs.dry_run }}
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -106,9 +128,15 @@ jobs:
             --apiIssuer "$ASC_ISSUER_ID"
 
       - name: IPA en artefact (dépannage)
-        if: always()
+        if: ${{ !inputs.dry_run && always() }}
         uses: actions/upload-artifact@v4
         with:
           name: tama-ipa
           path: build/ios/ipa/*.ipa
           if-no-files-found: ignore
+
+      - name: Bilan de l'essai à blanc
+        if: ${{ inputs.dry_run }}
+        run: |
+          echo "Essai à blanc terminé : la compilation iOS passe."
+          echo "Relancer sans l'option, avec les secrets, pour envoyer sur TestFlight."

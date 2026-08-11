@@ -106,9 +106,24 @@ macOS — gratuit sur ce repo public.
    La version encodée (`base64 -i AuthKey_XXX.p8`) est acceptée aussi,
    le workflow reconnaît les deux formes.
 
-2. Onglet **Actions** → workflow **TestFlight** → **Run workflow**.
+2. Onglet **Actions** → workflow **TestFlight** → **Run workflow**, case
+   « essai à blanc » **décochée**.
 3. À la fin (~15-20 min), le build apparaît dans App Store Connect →
    TestFlight (traitement Apple : quelques minutes de plus).
+
+### Essai à blanc
+
+Le workflow propose une case **« Essai à blanc »** qui compile l'app sans
+signer ni téléverser — donc sans aucun secret. Utile pour vérifier que la
+chaîne tient après une mise à jour de Flutter ou une nouvelle dépendance,
+sans consommer un numéro de build.
+
+Il valide : compilation iOS complète, schéma Xcode, validité
+d'`ExportOptions.plist`, présence de l'outil d'envoi Apple, et absence de
+canal alpha sur l'icône 1024×1024 (motif de rejet automatique côté Apple).
+
+Vérifié le 11/08/2026 sur `macos-latest` : essai à blanc au vert en
+3 min 20.
 
 Le numéro de build est automatique (numéro d'exécution du workflow), donc
 chaque envoi est accepté sans collision. Premier lancement d'un workflow

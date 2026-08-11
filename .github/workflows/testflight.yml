@@ -135,8 +135,22 @@ jobs:
           path: build/ios/ipa/*.ipa
           if-no-files-found: ignore
 
-      - name: Bilan de l'essai à blanc
+      # Contrôles des étapes qui suivent la compilation, sans avoir besoin
+      # des secrets : un défaut ici ferait échouer le vrai envoi à la
+      # toute dernière minute, après un quart d'heure de build.
+      - name: Vérifications à blanc
         if: ${{ inputs.dry_run }}
         run: |
-          echo "Essai à blanc terminé : la compilation iOS passe."
+          echo "— Schéma Xcode —"
+          xcodebuild -workspace ios/Runner.xcworkspace -list | head -20
+          echo "— Options d'export —"
+          plutil -lint ios/ExportOptions.plist
+          echo "— Outil d'envoi App Store —"
+          xcrun --find altool
+          echo "— Icône marketing (Apple refuse tout canal alpha) —"
+          sips -g hasAlpha -g pixelWidth \
+            ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png
+          echo
+          echo "Essai à blanc terminé : compilation, schéma, options d'export,"
+          echo "outil d'envoi et icône validés."
           echo "Relancer sans l'option, avec les secrets, pour envoyer sur TestFlight."

@@ -1,143 +1,106 @@
 # Tama sur TestFlight
 
-Le repo est prêt : bundle `com.teiki.tama`, équipe `K597U7X3FZ`, icônes,
-portrait uniquement, conformité export déclarée (pas de chiffrement
-spécifique → pas de question à chaque build). Deux chemins possibles.
+Méthode retenue : **Xcode Cloud**, comme les autres apps du studio.
+Aucune clé API, aucun secret dans le dépôt — Apple parle directement à
+GitHub.
 
-## Étapes côté Apple (obligatoires, une seule fois, ~10 min)
+Le dépôt est prêt : bundle `com.teiki.tama`, équipe `K597U7X3FZ`, icônes,
+portrait uniquement, conformité export déclarée, schéma `Runner` partagé,
+et le script d'amorçage Flutter attendu par Xcode Cloud.
 
-⚠️ Ces étapes se passent sur **deux sites Apple différents**, et c'est la
-source d'erreur n° 1 : l'identifiant se crée sur `developer.apple.com`,
-la fiche de l'app sur `appstoreconnect.com`. App Store Connect ne crée
-jamais un Bundle ID, il ne fait que lister ceux déjà enregistrés.
+## Étapes côté Apple (une seule fois)
 
-### 1. Enregistrer l'identifiant (developer.apple.com)
+### 1. L'identifiant et la fiche — déjà faits
 
-À faire **avant** de créer la fiche, sinon `com.teiki.tama` n'apparaîtra
-pas dans le menu déroulant.
+- App ID `com.teiki.tama` enregistré sur developer.apple.com.
+- Fiche **Tama TV** créée sur App Store Connect.
 
-1. Aller sur
-   [developer.apple.com/account/resources/identifiers/list](https://developer.apple.com/account/resources/identifiers/list)
-   (menu **Certificates, IDs & Profiles** → **Identifiers**).
-2. Vérifier en haut à droite que l'équipe sélectionnée est bien celle du
-   Team ID **K597U7X3FZ** (si le compte appartient à plusieurs équipes).
-3. Cliquer le **+** bleu → **App IDs** → Continue → type **App** → Continue.
-4. Remplir :
-   - **Description** : `Tama` — champ interne. Apple refuse les accents,
-     apostrophes et emoji ici.
-   - **Bundle ID** : cocher **Explicit** (surtout pas Wildcard) et saisir
-     exactement `com.teiki.tama`, tout en minuscules.
-   - **Capabilities** : ne rien cocher. Tama n'utilise ni notifications
-     push, ni Sign in with Apple, ni achats intégrés à ce stade.
-5. **Continue** → **Register**.
+Si un jour il faut recommencer pour une autre app : l'identifiant se crée
+sur `developer.apple.com` (Certificates, IDs & Profiles → Identifiers →
+**+** → App IDs → App, **Explicit**, aucune capability), **avant** la
+fiche sur `appstoreconnect.apple.com`, sinon il n'apparaît pas dans le
+menu déroulant. Le nom de la fiche est unique dans le monde entier — d'où
+« Tama TV » plutôt que « Tama », le nom sous l'icône restant « Tama ».
 
-L'identifiant est immédiat, mais App Store Connect peut mettre quelques
-minutes à le voir. Si le menu déroulant reste vide, se déconnecter puis
-reconnecter d'App Store Connect.
+### 2. Créer le workflow Xcode Cloud
 
-**Si la section « Identifiers » est introuvable** : l'adhésion payante au
-[Apple Developer Program](https://developer.apple.com/programs/) (99 $/an)
-n'est pas active. Elle est obligatoire pour TestFlight — un compte gratuit
-ne permet que d'installer sur ses propres appareils, pendant 7 jours.
+App Store Connect → **Tama TV** → onglet **Xcode Cloud** → **Commencer** :
 
-### 2. Créer la fiche de l'app (appstoreconnect.apple.com)
+1. **Dépôt** : connecter GitHub et choisir `teiki5320/Tama`. Apple installe
+   son application GitHub et demande l'accès au dépôt — c'est la seule
+   autorisation à donner, il n'y a aucune clé à copier.
+2. **Branche** : `main`.
+3. **Action** : **Archive** · Schéma **Runner** · Configuration **Release**.
+4. **Post-action** : **TestFlight (testeurs internes)**.
+5. **Déclencheur** : au choix — à chaque push sur `main`, ou manuel.
 
-[App Store Connect](https://appstoreconnect.apple.com) → **Mes apps** →
-**+** → **Nouvelle app** :
+Xcode Cloud gère seul les certificats et profils de signature.
 
-- **Plateformes** : iOS
-- **Nom** : `Tama` — unique dans le monde entier. S'il est refusé, en
-  choisir un autre (`Tama Drama`, `Tama TV`…) : ce nom n'est que celui de
-  la fiche, l'app garde « Tama » sous l'icône (`CFBundleDisplayName`).
-- **Langue principale** : Français
-- **Bundle ID** : `com.teiki.tama` (celui de l'étape 1)
-- **SKU** : `tama-ios` — référence interne libre, jamais visible du public.
-- **Accès utilisateur** : Accès complet.
+### 3. Le script d'amorçage — déjà dans le dépôt
 
-### 3. Créer une clé API App Store Connect
+Xcode Cloud ne connaît que Xcode : après le clone il ne trouverait ni le
+SDK Flutter, ni `Generated.xcconfig` (ignoré par git), ni les pods. C'est
+le rôle de [`ios/ci_scripts/ci_post_clone.sh`](../ios/ci_scripts/ci_post_clone.sh),
+exécuté automatiquement après chaque clone. Il installe Flutter et
+CocoaPods, puis lance `flutter build ios --config-only`, qui prépare le
+projet sans compiler — l'archivage étant le travail de Xcode Cloud.
 
-Nécessaire seulement pour le chemin CI (chemin B).
-Users and Access → **Integrations** → App Store Connect API → **+** :
+⚠️ **Ne pas retirer le bit exécutable du fichier** (`chmod +x`), sinon
+Xcode Cloud l'ignore silencieusement et l'archivage échoue sur un
+`Generated.xcconfig` introuvable.
 
-- Rôle : **App Manager** (requis pour la signature cloud automatique).
-- Télécharger le fichier `.p8` (téléchargeable **une seule fois**),
-  noter le **Key ID** et l'**Issuer ID** affichés sur la même page.
+Le numéro de build vient de `CI_BUILD_NUMBER`, fourni par Xcode Cloud et
+incrémenté à chaque exécution : sans cela, tous les builds porteraient le
+numéro 1 et App Store Connect refuserait les envois suivants comme
+doublons.
 
-## Chemin A — avec un Mac (le plus simple)
+### 4. Inviter des testeurs
+
+App Store Connect → Tama TV → **TestFlight** → **Testeurs internes**
+(jusqu'à 100, disponibles immédiatement) ou **Testeurs externes**
+(jusqu'à 10 000, première soumission relue par Apple, en général < 48 h).
+
+## Variables d'environnement
+
+Le build par défaut tourne en **mode démo** : catalogue local, vidéo de
+démonstration, aucun backend requis. C'est voulu pour les premiers essais.
+
+Pour brancher le vrai backend, ajouter les variables dans les réglages du
+workflow Xcode Cloud (Environnement → Variables), puis les passer au build
+en ajoutant à la fin du script d'amorçage :
+
+```sh
+--dart-define=SUPABASE_URL="$SUPABASE_URL" \
+--dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+--dart-define=BUNNY_STREAM_LIBRARY_ID="$BUNNY_STREAM_LIBRARY_ID" \
+--dart-define=BUNNY_STREAM_CDN_HOSTNAME="$BUNNY_STREAM_CDN_HOSTNAME"
+```
+
+Cocher **Secret** pour les valeurs sensibles.
+
+## Chemins alternatifs
+
+### Depuis un Mac
 
 ```bash
-git pull
 flutter pub get
 open ios/Runner.xcworkspace
 ```
 
-Dans Xcode : se connecter avec le compte Apple (Settings → Accounts),
-sélectionner le device « Any iOS Device », puis **Product → Archive** →
-**Distribute App → TestFlight & App Store**. Xcode gère certificats et
-profils tout seul (signature automatique déjà configurée).
+Xcode → « Any iOS Device » → **Product → Archive** → **Distribute App →
+TestFlight & App Store**. La signature automatique est déjà configurée.
 
-Pour un vrai build de production, penser aux variables :
+### GitHub Actions
 
-```bash
-flutter build ipa --release \
-  --dart-define=SUPABASE_URL=... \
-  --dart-define=SUPABASE_ANON_KEY=... \
-  --dart-define=BUNNY_STREAM_LIBRARY_ID=... \
-  --dart-define=BUNNY_STREAM_CDN_HOSTNAME=...
-```
+[`.github/workflows/testflight.yml`](../.github/workflows/testflight.yml)
+fait le même travail depuis un runner macOS, mais exige une clé API App
+Store Connect et trois secrets — inutile puisque Xcode Cloud est en place.
+Il reste utile pour son option **« Essai à blanc »**, qui compile l'app
+sans signer ni téléverser et sans aucun secret : pratique pour vérifier
+que la chaîne tient après une mise à jour de Flutter ou une nouvelle
+dépendance.
 
-## Chemin B — sans Mac : GitHub Actions
-
-Le workflow [.github/workflows/testflight.yml](../.github/workflows/testflight.yml)
-compile, signe (signature cloud automatique) et téléverse depuis un runner
-macOS — gratuit sur ce repo public.
-
-1. Sur GitHub : **Settings → Secrets and variables → Actions** → ajouter :
-
-   | Secret | Valeur |
-   |---|---|
-   | `ASC_KEY_ID` | Key ID de la clé API |
-   | `ASC_ISSUER_ID` | Issuer ID de l'équipe |
-   | `ASC_KEY_CONTENT` | contenu du fichier `.p8` |
-
-   Le `.p8` est un fichier texte : depuis un iPad, l'ouvrir dans Fichiers,
-   tout sélectionner, copier, coller dans le secret — de
-   `-----BEGIN PRIVATE KEY-----` à `-----END PRIVATE KEY-----` inclus.
-   La version encodée (`base64 -i AuthKey_XXX.p8`) est acceptée aussi,
-   le workflow reconnaît les deux formes.
-
-2. Onglet **Actions** → workflow **TestFlight** → **Run workflow**, case
-   « essai à blanc » **décochée**.
-3. À la fin (~15-20 min), le build apparaît dans App Store Connect →
-   TestFlight (traitement Apple : quelques minutes de plus).
-
-### Essai à blanc
-
-Le workflow propose une case **« Essai à blanc »** qui compile l'app sans
-signer ni téléverser — donc sans aucun secret. Utile pour vérifier que la
-chaîne tient après une mise à jour de Flutter ou une nouvelle dépendance,
-sans consommer un numéro de build.
-
-Il valide : compilation iOS complète, schéma Xcode, validité
-d'`ExportOptions.plist`, présence de l'outil d'envoi Apple, et absence de
-canal alpha sur l'icône 1024×1024 (motif de rejet automatique côté Apple).
-
-Vérifié le 11/08/2026 sur `macos-latest` : essai à blanc au vert en
-3 min 20.
-
-Le numéro de build est automatique (numéro d'exécution du workflow), donc
-chaque envoi est accepté sans collision. Premier lancement d'un workflow
-signé : il peut échouer si la fiche app (étape Apple n° 1) n'existe pas
-encore — la créer puis relancer.
-
-⚠️ Le workflow tel quel compile en **mode démo** (pas de secrets Supabase).
-Pour un build branché au backend, ajouter les secrets `SUPABASE_URL`, etc.
-et les passer en `--dart-define` dans l'étape « Compilation Flutter » —
-à faire quand le backend sera prêt.
-
-## Inviter des testeurs
-
-App Store Connect → TestFlight → **Testeurs internes** (jusqu'à 100,
-disponibles immédiatement) ou **Testeurs externes** (jusqu'à 10 000,
-première soumission relue par Apple, généralement < 48 h). Chaque testeur
-reçoit une invitation par email et installe via l'app TestFlight.
+L'essai à blanc valide la compilation iOS complète, le schéma Xcode, la
+validité d'`ExportOptions.plist`, la présence de l'outil d'envoi Apple et
+l'absence de canal alpha sur l'icône 1024×1024 (motif de rejet automatique
+côté Apple). Vérifié le 11/08/2026 sur `macos-latest` : au vert en 3 min 20.

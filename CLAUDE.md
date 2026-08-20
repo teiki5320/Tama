@@ -20,8 +20,14 @@ mesurer la rétention et le taux de complétion (vue SQL `v_retention`).
 - **Mode démo intégré** : sans `--dart-define` Supabase, l'app tourne sur
   des données locales (`lib/repositories/mock_data.dart`). Toute nouvelle
   fonctionnalité DOIT continuer à fonctionner en mode démo.
-- **TestFlight prêt** : icônes, signature (Team ID posé), workflow
-  `.github/workflows/testflight.yml`, guide `docs/TESTFLIGHT.md`.
+- **TestFlight via Xcode Cloud** (méthode du studio, aucun secret) :
+  icônes, Team ID posé, schéma `Runner` partagé, script d'amorçage
+  `ios/ci_scripts/ci_post_clone.sh` (doit rester exécutable), guide
+  `docs/TESTFLIGHT.md`. Le workflow GitHub Actions `testflight.yml` n'est
+  qu'un chemin de secours ; son option « essai à blanc » sert de
+  vérification de build sans secrets.
+- **Aperçu web** : `.github/workflows/web-preview.yml` publie l'app en
+  mode démo sur GitHub Pages, pour la faire voir sans compte Apple.
 
 ## Stack et architecture
 

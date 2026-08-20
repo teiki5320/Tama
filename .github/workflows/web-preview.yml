@@ -51,12 +51,21 @@ jobs:
       - name: Dépendances
         run: flutter pub get
 
-      # `enablement: true` active GitHub Pages tout seul au premier passage,
-      # sans avoir à toucher aux réglages du dépôt.
+      # `enablement: true` suffit sur certains dépôts ; sur d'autres, Pages
+      # doit d'abord être activé à la main (voir le message d'aide plus bas).
       - name: Activation de GitHub Pages
+        id: pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
+
+      - name: Aide — Pages non activé
+        if: ${{ failure() && steps.pages.outcome == 'failure' }}
+        run: |
+          echo "::error::GitHub Pages n'est pas activé sur ce dépôt."
+          echo "À faire une seule fois : Settings → Pages → Build and"
+          echo "deployment → Source : « GitHub Actions ». Puis relancer"
+          echo "ce workflow. Aucune clé ni secret n'est nécessaire."
 
       # base-href : le site est servi sous /Tama/, pas à la racine.
       # DEMO_VIDEO_URL pointe vers la vidéo verticale copiée depuis web/.

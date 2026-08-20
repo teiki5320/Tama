@@ -1,18 +1,73 @@
-# Tama — instructions projet pour Claude Code
+# Travailler sur Tama
 
 Tama est une app mobile de streaming de micro-dramas verticaux (~1 min),
 spécialisée dans les dramas africains francophones, produite par le studio
-du propriétaire du repo. MVP sans monétisation : l'unique objectif est de
+du propriétaire du dépôt. MVP sans monétisation : l'unique objectif est de
 mesurer la rétention et le taux de complétion (vue SQL `v_retention`).
 
 - Bundle ID : `com.teiki.tama` · Apple Team ID : `K597U7X3FZ`
-- Branche principale : `main` (le travail validé finit toujours sur `main`)
+- Fiche App Store : **Tama TV** (le nom « Tama » était déjà pris ; sous
+  l'icône, l'app s'appelle bien « Tama »).
+
+## Comment on travaille
+
+- **Réponds toujours en français**, y compris dans le raisonnement visible.
+- **Numérote chaque choix laissé au développeur.** Trois questions dans un
+  message doivent pouvoir se répondre « 1 oui, 2 non, 3 plus tard ».
+- **Tout se fait sur `main`, directement. On ne crée pas de branche.**
+- **Demande plutôt que de décider seul** d'un changement de cap, et ne
+  lance pas de longue exploration sans accord — les jetons sont payants.
+  Ne propose pas d'alternative à ce qui est déjà tranché ci-dessous.
+- **Ne laisse aucune trace de tes erreurs.** Corrige proprement plutôt que
+  d'empiler un correctif sur une bêtise.
+- **Vérifie avant d'affirmer.** App Store Connect change plusieurs fois
+  par an : consulte la documentation d'Apple ou demande une capture,
+  plutôt que de guider de mémoire.
+- **Avant tout commit** : `flutter analyze` et `flutter test` doivent
+  passer.
+- **Aucun test ne couvre la compilation iOS.** `analyze`, les tests et
+  même un build Android peuvent tous passer sur un projet qui n'archive
+  pas. Toucher à `ios/`, au `Podfile` ou à une dépendance native, c'est
+  s'engager à surveiller le build Xcode Cloud qui suit.
+
+## Distribution — la méthode du studio
+
+**Xcode Cloud, toujours.** Aucun secret dans le dépôt. Ne propose ni
+GitHub Actions, ni Codemagic, ni aperçu web, ni APK : la question est
+tranchée.
+
+Amorçage Flutter dans `ios/ci_scripts/` — `ci_post_clone.sh` (installe le
+SDK, les pods, écrit `Generated.xcconfig`) et `ci_pre_xcodebuild.sh`
+(vérifie et répare `FLUTTER_ROOT` avant l'archive). **Les deux fichiers
+doivent rester exécutables** (`chmod +x`), sinon Xcode Cloud les ignore
+en silence et l'archive échoue sur un exit 65 illisible.
+
+## Les pièges déjà payés
+
+- **Xcode Cloud, action *Archiver*** : la préparation de la distribution
+  doit rester sur **« App Store Connect »**. Sur « TestFlight (tests
+  internes uniquement) », les builds n'apparaissent jamais dans la liste
+  de sélection d'une version.
+- **La version de `pubspec.yaml` doit être identique** à celle saisie dans
+  App Store Connect, sinon le build est non sélectionnable.
+- **Swift Package Manager doit rester désactivé** : les stables récentes
+  l'activent par défaut, podhelper saute alors les plugins compatibles et
+  l'archive casse sur « Module 'shared_preferences_foundation' not found ».
+  `ci_post_clone.sh` force le mode CocoaPods, ne pas retirer cette ligne.
+- **Les mots-clés App Store se comptent en octets**, pas en caractères :
+  chaque accent en vaut deux.
+- **Flutter ne descend pas dans les sous-dossiers d'assets** : chaque
+  sous-dossier se déclare à part dans `pubspec.yaml`.
+- ⚠️ Chaque poussée sur `main` déclenche un build Xcode Cloud, sans filtre
+  de fichiers — même pour un document. Groupe les commits quand c'est
+  possible.
 
 ## État actuel (ne pas refaire)
 
 - **Base Supabase** : migration complète dans `supabase/migrations/`
   (6 tables, RLS testée, vue `v_retention`), seed de dev dans
-  `supabase/seed.sql`. Testée sur Postgres 16.
+  `supabase/seed.sql`. Testée sur Postgres 16. **Pas encore appliquée sur
+  le projet Supabase réel.**
 - **App Flutter complète** : accueil (bannière, rail « Reprendre », rails
   par genre), fiche série, player vertical (swipe, préchargement du seul
   épisode suivant, enchaînement auto, reprise, sauvegarde 5 s), ma liste,
@@ -20,18 +75,9 @@ mesurer la rétention et le taux de complétion (vue SQL `v_retention`).
 - **Mode démo intégré** : sans `--dart-define` Supabase, l'app tourne sur
   des données locales (`lib/repositories/mock_data.dart`). Toute nouvelle
   fonctionnalité DOIT continuer à fonctionner en mode démo.
-- **TestFlight via Xcode Cloud** (méthode du studio, aucun secret) :
-  icônes, Team ID posé, schéma `Runner` partagé, script d'amorçage
-  `ios/ci_scripts/ci_post_clone.sh` (doit rester exécutable), guide
-  `docs/TESTFLIGHT.md`. Le workflow GitHub Actions `testflight.yml` n'est
-  qu'un chemin de secours ; son option « essai à blanc » sert de
-  vérification de build sans secrets.
-
-## Distribution — la méthode du studio
-
-**Xcode Cloud, toujours.** Configuration dans App Store Connect, aucun
-secret dans le dépôt. Ne pas proposer d'alternative (GitHub Actions,
-Codemagic, aperçu web, APK) : la question est tranchée.
+- **iOS prêt à archiver** : icônes (sans canal alpha), Team ID posé,
+  schéma `Runner` partagé, portrait uniquement, conformité export
+  déclarée, scripts Xcode Cloud en place.
 
 ## Stack et architecture
 
@@ -41,7 +87,7 @@ Pas de backend custom. Structure : `lib/core` (thème, env, router),
 impl. démo), `lib/providers`, `lib/features/<écran>`, `lib/services`
 (analytics, bunny, connectivité).
 
-## Règles non négociables
+## Règles de code non négociables
 
 1. **Aucune couleur, rayon ou taille de police en dur** : tout passe par
    les jetons de `lib/core/theme.dart` (`TamaColors`, `TamaText`,
@@ -62,22 +108,18 @@ impl. démo), `lib/providers`, `lib/features/<écran>`, `lib/services`
    connexion.
 6. **Commentaires en français**, identifiants en anglais.
 
-## Vérifications avant livraison
-
-```bash
-flutter analyze          # doit être à zéro
-flutter test             # doit être vert
-```
-
-Pour une vérification visuelle : `flutter build web --release`
-(CanvasKit est servi localement via `web/flutter_bootstrap.js`), servir
-`build/web` et capturer les écrans (390×844). La vidéo de démo se force
-avec `--dart-define=DEMO_VIDEO_URL=...`.
-
 ## Variables d'environnement (--dart-define)
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `BUNNY_STREAM_LIBRARY_ID`,
 `BUNNY_STREAM_CDN_HOSTNAME` — sans les deux premières : mode démo.
+
+## Où trouver quoi
+
+| Fichier | Contenu |
+|---|---|
+| `docs/TESTFLIGHT.md` | la procédure Xcode Cloud, pas à pas |
+| `supabase/migrations/` | le schéma, à coller dans Supabase |
+| `lib/core/theme.dart` | tous les jetons de design |
 
 ## Backlog connu (phase suivante, sur demande uniquement)
 

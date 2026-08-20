@@ -51,26 +51,38 @@ Dans Xcode : menu **Product → Xcode Cloud → Create Workflow**, puis
    C'est la seule autorisation à donner, aucune clé à copier.
 3. **Branche** : `main`.
 4. **Action** : **Archive** · Schéma **Runner** · Configuration
-   **Release** · Préparation au déploiement **TestFlight et App Store**.
-5. **Post-action** : **TestFlight — tests internes**, en sélectionnant le
-   groupe de testeurs créé à l'étape 4 ci-dessous.
-6. **Condition de démarrage** : changements de branche sur `main`, ou
+   **Release** · Préparation de la distribution : **App Store Connect**.
+
+   ⚠️ **Surtout pas « TestFlight (tests internes uniquement) »** : avec ce
+   réglage, les builds n'apparaissent jamais dans la liste de sélection
+   d'une version. Piège déjà payé sur une autre app du studio.
+5. **Condition de démarrage** : changements de branche sur `main`, ou
    manuel.
 
 Xcode Cloud gère seul les certificats et profils de signature.
 
-### 3. Le script d'amorçage — déjà dans le dépôt
+### 3. Les scripts d'amorçage — déjà dans le dépôt
 
 Xcode Cloud ne connaît que Xcode : après le clone il ne trouverait ni le
-SDK Flutter, ni `Generated.xcconfig` (ignoré par git), ni les pods. C'est
-le rôle de [`ios/ci_scripts/ci_post_clone.sh`](../ios/ci_scripts/ci_post_clone.sh),
-exécuté automatiquement après chaque clone. Il installe Flutter et
-CocoaPods, puis lance `flutter build ios --config-only`, qui prépare le
-projet sans compiler — l'archivage étant le travail de Xcode Cloud.
+SDK Flutter, ni `Generated.xcconfig` (ignoré par git), ni les pods. Deux
+scripts s'en chargent, calqués sur ceux d'Erea :
 
-⚠️ **Ne pas retirer le bit exécutable du fichier** (`chmod +x`), sinon
-Xcode Cloud l'ignore silencieusement et l'archivage échoue sur un
-`Generated.xcconfig` introuvable.
+- [`ios/ci_scripts/ci_post_clone.sh`](../ios/ci_scripts/ci_post_clone.sh) —
+  installe Flutter (avec réessais, le réseau des runners lâche), force le
+  mode CocoaPods, lance `flutter build ios --config-only` puis
+  `pod install --repo-update`, et vérifie que `Generated.xcconfig` existe.
+- [`ios/ci_scripts/ci_pre_xcodebuild.sh`](../ios/ci_scripts/ci_pre_xcodebuild.sh) —
+  vérifie juste avant l'archive que `FLUTTER_ROOT` pointe vers un SDK
+  réellement présent, et régénère la configuration sinon.
+
+⚠️ **Ne pas retirer le bit exécutable** (`chmod +x`) : Xcode Cloud ignore
+alors les scripts en silence et l'archive échoue sur un exit 65 illisible.
+
+⚠️ **Ne pas retirer `flutter config --no-enable-swift-package-manager`** :
+les stables récentes activent SwiftPM par défaut, `pod install` saute
+alors les plugins compatibles et l'archive casse sur « Module
+'shared_preferences_foundation' not found ». Tama utilise
+`shared_preferences`.
 
 Le numéro de build vient de `CI_BUILD_NUMBER`, fourni par Xcode Cloud et
 incrémenté à chaque exécution : sans cela, tous les builds porteraient le

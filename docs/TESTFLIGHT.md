@@ -56,8 +56,9 @@ Dans Xcode : menu **Product → Xcode Cloud → Create Workflow**, puis
    ⚠️ **Surtout pas « TestFlight (tests internes uniquement) »** : avec ce
    réglage, les builds n'apparaissent jamais dans la liste de sélection
    d'une version. Piège déjà payé sur une autre app du studio.
-5. **Condition de démarrage** : changements de branche sur `main`, ou
-   manuel.
+5. **Condition de démarrage** : **Changements de branche**, branche
+   `main`. C'est ce réglage qui fait qu'une poussée sur `main` lance un
+   build toute seule.
 
 Xcode Cloud gère seul les certificats et profils de signature.
 

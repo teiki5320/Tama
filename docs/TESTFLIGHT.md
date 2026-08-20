@@ -22,17 +22,40 @@ fiche sur `appstoreconnect.apple.com`, sinon il n'apparaît pas dans le
 menu déroulant. Le nom de la fiche est unique dans le monde entier — d'où
 « Tama TV » plutôt que « Tama », le nom sous l'icône restant « Tama ».
 
-### 2. Créer le workflow Xcode Cloud
+### 2. Créer le workflow Xcode Cloud — depuis Xcode, sur un Mac
 
-App Store Connect → **Tama TV** → onglet **Xcode Cloud** → **Commencer** :
+⚠️ **Le premier workflow ne peut pas être créé depuis le web.** L'onglet
+Xcode Cloud d'App Store Connect affiche « Créez un processus dans Xcode
+pour commencer » et ne propose que le bouton « Ouvrir Xcode ». Une fois le
+workflow créé, tout se gère ensuite depuis le web (modification, lancement
+de builds) — y compris depuis un iPad.
 
-1. **Dépôt** : connecter GitHub et choisir `teiki5320/Tama`. Apple installe
-   son application GitHub et demande l'accès au dépôt — c'est la seule
-   autorisation à donner, il n'y a aucune clé à copier.
-2. **Branche** : `main`.
-3. **Action** : **Archive** · Schéma **Runner** · Configuration **Release**.
-4. **Post-action** : **TestFlight (testeurs internes)**.
-5. **Déclencheur** : au choix — à chaque push sur `main`, ou manuel.
+Sur le Mac, préparer le projet puis ouvrir le **workspace** (pas le
+`.xcodeproj`, à cause de CocoaPods) :
+
+```bash
+git pull
+flutter pub get
+# Génère le Podfile, les pods et Generated.xcconfig
+flutter build ios --release --config-only --no-codesign
+open ios/Runner.xcworkspace
+```
+
+Le `ios/Podfile` est produit par cette commande : **le committer** une
+fois généré, pour que la configuration des pods soit reproductible.
+
+Dans Xcode : menu **Product → Xcode Cloud → Create Workflow**, puis
+
+1. **Produit** : `Runner` → Next.
+2. **Dépôt** : connecter GitHub et autoriser l'accès à `teiki5320/Tama`.
+   C'est la seule autorisation à donner, aucune clé à copier.
+3. **Branche** : `main`.
+4. **Action** : **Archive** · Schéma **Runner** · Configuration
+   **Release** · Préparation au déploiement **TestFlight et App Store**.
+5. **Post-action** : **TestFlight — tests internes**, en sélectionnant le
+   groupe de testeurs créé à l'étape 4 ci-dessous.
+6. **Condition de démarrage** : changements de branche sur `main`, ou
+   manuel.
 
 Xcode Cloud gère seul les certificats et profils de signature.
 

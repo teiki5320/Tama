@@ -116,6 +116,22 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
 
+      # Validation Apple avant envoi : remonte les problèmes de métadonnées
+      # (icône, Info.plist, identifiant) avec un message lisible.
+      # Non bloquante : une validation capricieuse ne doit pas empêcher un
+      # envoi qui, lui, passerait.
+      - name: Validation Apple (informative)
+        if: ${{ !inputs.dry_run }}
+        continue-on-error: true
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          xcrun altool --validate-app --type ios \
+            -f build/ios/ipa/*.ipa \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID"
+
       - name: Envoi vers TestFlight
         if: ${{ !inputs.dry_run }}
         env:
@@ -126,6 +142,10 @@ jobs:
             -f build/ios/ipa/*.ipa \
             --apiKey "$ASC_KEY_ID" \
             --apiIssuer "$ASC_ISSUER_ID"
+          echo
+          echo "Envoyé : Tama version $(grep '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d'+' -f1) build ${{ github.run_number }}"
+          echo "À retrouver dans App Store Connect → Tama TV → TestFlight,"
+          echo "après quelques minutes de traitement par Apple."
 
       - name: IPA en artefact (dépannage)
         if: ${{ !inputs.dry_run && always() }}

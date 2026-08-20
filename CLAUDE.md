@@ -26,8 +26,12 @@ mesurer la rétention et le taux de complétion (vue SQL `v_retention`).
   `docs/TESTFLIGHT.md`. Le workflow GitHub Actions `testflight.yml` n'est
   qu'un chemin de secours ; son option « essai à blanc » sert de
   vérification de build sans secrets.
-- **Aperçu web** : `.github/workflows/web-preview.yml` publie l'app en
-  mode démo sur GitHub Pages, pour la faire voir sans compte Apple.
+
+## Distribution — la méthode du studio
+
+**Xcode Cloud, toujours.** Configuration dans App Store Connect, aucun
+secret dans le dépôt. Ne pas proposer d'alternative (GitHub Actions,
+Codemagic, aperçu web, APK) : la question est tranchée.
 
 ## Stack et architecture
 

@@ -1,0 +1,89 @@
+# Aperçu web de Tama sur GitHub Pages.
+#
+# Publie l'app compilée pour le web à une adresse publique, consultable
+# depuis n'importe quel téléphone — aucun compte Apple, aucune clé, aucun
+# secret. Sert à faire voir l'app et à récolter des retours avant TestFlight.
+#
+# L'app tourne en mode démo (catalogue local, vidéo de démonstration) :
+# aucune clé Supabase ni Bunny n'est nécessaire, et rien de sensible
+# n'est exposé.
+name: Aperçu web
+
+on:
+  workflow_dispatch:
+  # Republie l'aperçu quand le code de l'app change.
+  push:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "web/**"
+      - "assets/**"
+      - "pubspec.yaml"
+      - ".github/workflows/web-preview.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publier:
+    name: Compiler et publier l'aperçu
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Installation de Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Dépendances
+        run: flutter pub get
+
+      # `enablement: true` active GitHub Pages tout seul au premier passage,
+      # sans avoir à toucher aux réglages du dépôt.
+      - name: Activation de GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      # base-href : le site est servi sous /Tama/, pas à la racine.
+      # DEMO_VIDEO_URL pointe vers la vidéo verticale copiée depuis web/.
+      - name: Compilation web
+        run: |
+          flutter build web --release \
+            --base-href "/${{ github.event.repository.name }}/" \
+            --dart-define=DEMO_VIDEO_URL=demo.webm
+
+      # Les variantes de moteur de rendu inutilisées pèsent une trentaine
+      # de Mo : on ne publie que celle réellement chargée par le navigateur.
+      - name: Allègement du build
+        run: |
+          cd build/web
+          rm -rf canvaskit/skwasm* canvaskit/wimp* \
+                 canvaskit/experimental_webparagraph canvaskit/*.symbols
+          echo "Poids publié : $(du -sh . | cut -f1)"
+
+      - name: Préparation de l'artefact Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+      - name: Publication
+        id: deploiement
+        uses: actions/deploy-pages@v4
+
+      - name: Adresse de l'aperçu
+        run: |
+          echo "Aperçu en ligne : ${{ steps.deploiement.outputs.page_url }}"

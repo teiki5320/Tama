@@ -23,7 +23,7 @@ create table public.series (
   title          text not null,
   synopsis       text,
   cover_url      text,                                  -- visuel portrait 9:16
-  genre          text,                                  -- romance, vengeance, thriller, comédie…
+  genre          text,                                  -- romance, vengeance, thriller, drame…
   language       text not null default 'fr',            -- fr, wo, en
   total_episodes int  not null default 0,
   status         text not null default 'ongoing'

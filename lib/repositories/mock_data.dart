@@ -42,17 +42,6 @@ const List<Series> mockSeries = [
     sortOrder: 2,
   ),
   Series(
-    id: 'demo-serie-4',
-    title: 'La Dot',
-    synopsis: 'Pour épouser Aminata, Karim doit réunir une dot impossible — '
-        'et sa belle-famille ne va rien lui épargner.',
-    genre: 'comédie',
-    language: 'fr',
-    totalEpisodes: 6,
-    status: 'completed',
-    sortOrder: 3,
-  ),
-  Series(
     id: 'demo-serie-5',
     title: 'Trahison à Cocody',
     synopsis: 'Le jour de son mariage, Adjoua apprend qui a réellement signé '
@@ -84,17 +73,6 @@ const List<Series> mockSeries = [
     totalEpisodes: 6,
     status: 'ongoing',
     sortOrder: 6,
-  ),
-  Series(
-    id: 'demo-serie-8',
-    title: 'Bienvenue au maquis',
-    synopsis: 'La petite gargote de Tantie Rosalie affronte l\'ouverture d\'un '
-        'fast-food climatisé juste en face.',
-    genre: 'comédie',
-    language: 'fr',
-    totalEpisodes: 5,
-    status: 'ongoing',
-    sortOrder: 7,
   ),
 ];
 
@@ -164,4 +142,4 @@ List<WatchProgress> demoProgressSeed() {
 }
 
 /// Favoris pré-remplis en mode démo.
-const List<String> demoFavoriteSeed = ['demo-serie-2', 'demo-serie-4'];
+const List<String> demoFavoriteSeed = ['demo-serie-2', 'demo-serie-5'];

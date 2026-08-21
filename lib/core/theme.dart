@@ -58,7 +58,6 @@ abstract final class TamaColors {
     if (g.contains('vengeance')) return vermillon;
     if (g.contains('romance') || g.contains('amour')) return rose;
     if (g.contains('thriller') || g.contains('polar')) return indigo;
-    if (g.contains('coméd') || g.contains('comed')) return jaune;
     if (g.contains('drame')) return emeraude;
     return vermillon;
   }

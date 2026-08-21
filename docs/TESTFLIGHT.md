@@ -52,6 +52,15 @@ conserve le produit `tama` avec un processus « Tama TV » **cassé**
 (« Primary Repository Not Found », le dépôt de Tama n'ayant jamais été
 enregistré dans ce produit). Il ne peut rien déclencher.
 
+### ⚠️ Numéro de build à régler si l'on recrée le processus
+
+Le build 119 de Tama porte ce numéro parce qu'il a hérité du compteur
+d'Erea pendant la mésaventure. Un produit Xcode Cloud neuf repart à 1,
+donc **sous** 119 : Apple refuserait les builds suivants.
+
+Après toute recréation du produit : Xcode Cloud → Réglages → **Numéro du
+build** → régler le numéro du *prochain* build à **120** au minimum.
+
 ### Avant de recréer ce processus
 
 Le build 119, vert, a été produit avant tout cela : Tama a déjà la preuve

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme.dart';
 import '../../core/widgets/async_view.dart';
+import '../../core/widgets/poster.dart';
 import '../../core/widgets/series_card.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/favorites_providers.dart';
@@ -30,13 +31,13 @@ class FavoritesScreen extends ConsumerWidget {
           TamaSpacing.l,
           TamaSpacing.m,
           TamaSpacing.l,
-          TamaSpacing.xxl,
+          TamaSpacing.navBar,
         ),
         children: [
-          const Text('Ma liste', style: TamaText.titleXL),
+          const Text('MA LISTE', style: TamaText.titleXL),
           const SizedBox(height: TamaSpacing.xl),
           if (!canFavorite) const _SignInCard(),
-          const _SectionTitle('Mes séries'),
+          const SectionHeader('Mes séries'),
           favorites.when(
             loading: () => const Padding(
               padding: EdgeInsets.all(TamaSpacing.xl),
@@ -68,7 +69,7 @@ class FavoritesScreen extends ConsumerWidget {
                   ),
           ),
           const SizedBox(height: TamaSpacing.xl),
-          const _SectionTitle('Historique'),
+          const SectionHeader('Historique', couleur: TamaColors.textFaint),
           history.when(
             loading: () => const Padding(
               padding: EdgeInsets.all(TamaSpacing.xl),
@@ -130,20 +131,6 @@ class _SignInCard extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.title);
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: TamaSpacing.m),
-      child: Text(title, style: TamaText.titleM),
-    );
-  }
-}
-
 /// Ligne d'historique : vignette, série, épisode, progression.
 class _HistoryRow extends StatelessWidget {
   const _HistoryRow({required this.entry});
@@ -154,8 +141,8 @@ class _HistoryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final completed = entry.progress.completed;
     final fraction = entry.progress.fractionOf(entry.episode.durationSeconds);
+    final couleur = TamaColors.forGenre(entry.series.genre);
     return InkWell(
-      borderRadius: BorderRadius.circular(TamaRadius.card),
       onTap: () => context.push('/watch/${entry.episode.id}'),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: TamaSpacing.s),
@@ -187,20 +174,15 @@ class _HistoryRow extends StatelessWidget {
                   const SizedBox(height: TamaSpacing.s),
                   if (completed)
                     Text(
-                      'Terminé',
-                      style:
-                          TamaText.label.copyWith(color: TamaColors.accent),
+                      'TERMINÉ',
+                      style: TamaText.label.copyWith(color: couleur),
                     )
                   else
                     SizedBox(
                       width: 120,
-                      child: ClipRRect(
-                        borderRadius:
-                            BorderRadius.circular(TamaRadius.card),
-                        child: LinearProgressIndicator(
-                          value: fraction,
-                          minHeight: 3,
-                        ),
+                      child: ProgressStroke(
+                        fraction: fraction,
+                        couleur: couleur,
                       ),
                     ),
                 ],

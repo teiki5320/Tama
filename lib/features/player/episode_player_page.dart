@@ -14,6 +14,7 @@ import '../../models/series.dart';
 import '../../models/watch_progress.dart';
 import '../../providers/progress_providers.dart';
 import '../../providers/repositories_providers.dart';
+import '../../core/widgets/poster.dart';
 import '../../providers/settings_providers.dart';
 import '../../repositories/progress_repository.dart';
 import '../../services/analytics_service.dart';
@@ -421,7 +422,10 @@ class _EpisodePlayerPageState extends ConsumerState<EpisodePlayerPage> {
           if (videoReady)
             Align(
               alignment: Alignment.bottomCenter,
-              child: _ScrubBar(controller: controller),
+              child: _ScrubBar(
+                controller: controller,
+                couleur: TamaColors.forGenre(widget.series.genre),
+              ),
             ),
 
           // 6. Carte de fin de série (dernier épisode).
@@ -478,50 +482,60 @@ class _EpisodePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = TamaColors.coverPalette[
-        series.title.hashCode.abs() % TamaColors.coverPalette.length];
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: palette,
-        ),
-      ),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(TamaSpacing.xl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                series.title,
-                style: TamaText.titleL,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: TamaSpacing.xs),
-              Text(episode.displayTitle, style: TamaText.bodyMuted),
-              const SizedBox(height: TamaSpacing.xl),
-              if (failed) ...[
-                const Text(
-                  'Impossible de lire la vidéo.',
-                  style: TamaText.body,
-                ),
-                const SizedBox(height: TamaSpacing.m),
-                OutlinedButton(
-                  onPressed: onRetry,
-                  child: const Text('Réessayer'),
-                ),
-              ] else
-                const SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-            ],
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: TamaColors.posterGradient(series.genre, series.title),
+            ),
           ),
         ),
-      ),
+        const ScreenPrint(),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.all(TamaSpacing.xl),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  series.title.toUpperCase(),
+                  style: TamaText.titleXL,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: TamaSpacing.s),
+                Text(
+                  episode.displayTitle.toUpperCase(),
+                  style: TamaText.label,
+                ),
+                const SizedBox(height: TamaSpacing.xl),
+                if (failed) ...[
+                  const Text(
+                    'Impossible de lire la vidéo.',
+                    style: TamaText.body,
+                  ),
+                  const SizedBox(height: TamaSpacing.m),
+                  OutlinedButton(
+                    onPressed: onRetry,
+                    child: const Text('RÉESSAYER'),
+                  ),
+                ] else
+                  SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: TamaColors.forGenre(series.genre),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -574,11 +588,26 @@ class _PlayerOverlay extends ConsumerWidget {
         opacity: visible ? 1 : 0,
         duration: const Duration(milliseconds: 200),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: TamaSpacing.s),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          child: Stack(
+            children: [
+              // Le numéro d'épisode traité comme un objet graphique, à la
+              // manière d'un titre d'affiche.
+              Positioned(
+                left: TamaSpacing.l,
+                bottom: TamaSpacing.xl,
+                child: Text(
+                  episode.episodeNumber.toString().padLeft(2, '0'),
+                  style: TamaText.numeral.copyWith(
+                    color: TamaColors.forGenre(series.genre),
+                  ),
+                ),
+              ),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: TamaSpacing.s),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                 IconButton(
                   tooltip: 'Retour',
                   onPressed: () => context.pop(),
@@ -594,14 +623,15 @@ class _PlayerOverlay extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          series.title,
+                          series.title.toUpperCase(),
                           style: TamaText.titleM,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        const SizedBox(height: 2),
                         Text(
-                          'Épisode ${episode.episodeNumber}',
-                          style: TamaText.bodyMuted,
+                          'ÉPISODE ${episode.episodeNumber}',
+                          style: TamaText.label,
                         ),
                       ],
                     ),
@@ -619,8 +649,10 @@ class _PlayerOverlay extends ConsumerWidget {
                     color: TamaColors.text,
                   ),
                 ),
-              ],
-            ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -630,9 +662,12 @@ class _PlayerOverlay extends ConsumerWidget {
 
 /// Barre de progression fine en bas de l'écran, scrubbable au doigt.
 class _ScrubBar extends StatefulWidget {
-  const _ScrubBar({required this.controller});
+  const _ScrubBar({required this.controller, required this.couleur});
 
   final VideoPlayerController controller;
+
+  /// Couleur du genre : la barre est un trait de peinture, pas un filet.
+  final Color couleur;
 
   @override
   State<_ScrubBar> createState() => _ScrubBarState();
@@ -691,25 +726,11 @@ class _ScrubBarState extends State<_ScrubBar> {
                       alignment: Alignment.centerLeft,
                       children: [
                         // Piste.
-                        Container(
-                          height: 3,
-                          decoration: BoxDecoration(
-                            color: TamaColors.track,
-                            borderRadius:
-                                BorderRadius.circular(TamaRadius.card),
-                          ),
-                        ),
+                        Container(height: 5, color: TamaColors.track),
                         // Progression.
                         FractionallySizedBox(
                           widthFactor: fraction,
-                          child: Container(
-                            height: 3,
-                            decoration: BoxDecoration(
-                              color: TamaColors.accent,
-                              borderRadius:
-                                  BorderRadius.circular(TamaRadius.card),
-                            ),
-                          ),
+                          child: Container(height: 5, color: widget.couleur),
                         ),
                         // Poignée visible pendant le drag.
                         if (_dragFraction != null)
@@ -719,12 +740,9 @@ class _ScrubBarState extends State<_ScrubBar> {
                               0,
                             ),
                             child: Container(
-                              width: 12,
-                              height: 12,
-                              decoration: const BoxDecoration(
-                                color: TamaColors.accent,
-                                shape: BoxShape.circle,
-                              ),
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(color: widget.couleur),
                             ),
                           ),
                       ],

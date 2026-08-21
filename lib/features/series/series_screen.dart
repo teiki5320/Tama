@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme.dart';
 import '../../core/widgets/async_view.dart';
+import '../../core/widgets/poster.dart';
 import '../../core/widgets/series_card.dart';
 import '../../models/episode.dart';
 import '../../models/series.dart';
@@ -97,14 +98,15 @@ class _SeriesDetail extends ConsumerWidget {
                   spacing: TamaSpacing.s,
                   runSpacing: TamaSpacing.s,
                   children: [
-                    if (series.genre != null) _MetaChip(series.genre!),
+                    if (series.genre != null)
+                      GenreChip(genre: series.genre!),
                     _MetaChip(series.language.toUpperCase()),
                     _MetaChip(series.isCompleted ? 'Terminée' : 'En cours'),
                     _MetaChip('${series.totalEpisodes} épisodes'),
                   ],
                 ),
                 const SizedBox(height: TamaSpacing.m),
-                Text(series.title, style: TamaText.titleXL),
+                Text(series.title.toUpperCase(), style: TamaText.titleXL),
                 if (series.synopsis != null) ...[
                   const SizedBox(height: TamaSpacing.s),
                   Text(series.synopsis!, style: TamaText.body),
@@ -155,6 +157,7 @@ class _SeriesDetail extends ConsumerWidget {
                       (_, i) => _EpisodeCell(
                         episode: episodes[i],
                         progress: progressMap[episodes[i].id],
+                        couleur: TamaColors.forGenre(series.genre),
                       ),
                       childCount: episodes.length,
                     ),
@@ -200,11 +203,14 @@ class _StartButton extends ConsumerWidget {
     return SizedBox(
       width: double.infinity,
       child: FilledButton.icon(
+        style: FilledButton.styleFrom(
+          backgroundColor: TamaColors.forGenre(series.genre),
+        ),
         onPressed: target == null
             ? null
             : () => context.push('/watch/${target.id}'),
         icon: const Icon(Icons.play_arrow_rounded),
-        label: Text(label),
+        label: Text(label.toUpperCase()),
       ),
     );
   }
@@ -217,16 +223,18 @@ class _MetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Même gabarit que la pastille de genre, en gris : les métadonnées se
+    // lisent comme des étiquettes collées, pas comme des boutons.
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: TamaSpacing.s,
-        vertical: TamaSpacing.xs,
+        vertical: 3,
       ),
-      decoration: BoxDecoration(
-        color: TamaColors.surface,
-        borderRadius: BorderRadius.circular(TamaRadius.card),
+      color: TamaColors.surfaceHigh,
+      child: Text(
+        text.toUpperCase(),
+        style: TamaText.label.copyWith(color: TamaColors.textMuted),
       ),
-      child: Text(text, style: TamaText.bodyMuted),
     );
   }
 }
@@ -234,10 +242,17 @@ class _MetaChip extends StatelessWidget {
 /// Cellule numérotée d'un épisode : vu (rempli + coche), en cours (bordure
 /// dorée), jamais lu (surface neutre).
 class _EpisodeCell extends StatelessWidget {
-  const _EpisodeCell({required this.episode, this.progress});
+  const _EpisodeCell({
+    required this.episode,
+    required this.couleur,
+    this.progress,
+  });
 
   final Episode episode;
   final WatchProgress? progress;
+
+  /// Couleur du genre : elle marque les épisodes vus et en cours.
+  final Color couleur;
 
   @override
   Widget build(BuildContext context) {
@@ -247,10 +262,10 @@ class _EpisodeCell extends StatelessWidget {
       onTap: () => context.push('/watch/${episode.id}'),
       child: Container(
         decoration: BoxDecoration(
-          color: completed ? TamaColors.accentSoft : TamaColors.surface,
-          borderRadius: BorderRadius.circular(TamaRadius.card),
-          border:
-              inProgress ? Border.all(color: TamaColors.accent) : null,
+          color: completed
+              ? couleur.withValues(alpha: 0.22)
+              : TamaColors.surface,
+          border: inProgress ? Border.all(color: couleur, width: 2) : null,
         ),
         child: Stack(
           children: [
@@ -258,19 +273,15 @@ class _EpisodeCell extends StatelessWidget {
               child: Text(
                 '${episode.episodeNumber}',
                 style: TamaText.titleM.copyWith(
-                  color: completed ? TamaColors.accent : TamaColors.text,
+                  color: completed ? couleur : TamaColors.text,
                 ),
               ),
             ),
             if (completed)
-              const Positioned(
+              Positioned(
                 top: TamaSpacing.xs,
                 right: TamaSpacing.xs,
-                child: Icon(
-                  Icons.check_rounded,
-                  size: 12,
-                  color: TamaColors.accent,
-                ),
+                child: Icon(Icons.check_rounded, size: 12, color: couleur),
               ),
           ],
         ),

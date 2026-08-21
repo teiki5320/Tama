@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme.dart';
 import '../../core/widgets/async_view.dart';
+import '../../core/widgets/poster.dart';
 import '../../core/widgets/series_card.dart';
 import '../../models/series.dart';
 import '../../providers/catalog_providers.dart';
@@ -21,6 +22,8 @@ class HomeScreen extends ConsumerWidget {
     return SafeArea(
       bottom: false,
       child: RefreshIndicator(
+        color: TamaColors.accent,
+        backgroundColor: TamaColors.surface,
         onRefresh: () async {
           ref.invalidate(publishedSeriesProvider);
           ref.invalidate(progressVersionProvider);
@@ -38,15 +41,22 @@ class HomeScreen extends ConsumerWidget {
           builder: (seriesList) {
             final rails = ref.watch(genreRailsProvider).value ??
                 const <String, List<Series>>{};
+            var rank = 0;
             return ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(bottom: TamaSpacing.xxl),
+              padding: const EdgeInsets.only(bottom: TamaSpacing.navBar),
               children: [
-                const _BrandHeader(),
-                _FeaturedBanner(series: seriesList.first),
-                const _ContinueRail(),
+                Stagger(index: rank++, child: const _BrandHeader()),
+                Stagger(
+                  index: rank++,
+                  child: _FeaturedBanner(series: seriesList.first),
+                ),
+                Stagger(index: rank++, child: const _ContinueRail()),
                 for (final entry in rails.entries)
-                  _GenreRail(genre: entry.key, series: entry.value),
+                  Stagger(
+                    index: rank++,
+                    child: _GenreRail(genre: entry.key, series: entry.value),
+                  ),
               ],
             );
           },
@@ -56,7 +66,7 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-/// En-tête de marque, sobre : le nom et un point doré (état « en vie »).
+/// En-tête de marque : le nom en enseigne et le point vermillon.
 class _BrandHeader extends StatelessWidget {
   const _BrandHeader();
 
@@ -70,12 +80,13 @@ class _BrandHeader extends StatelessWidget {
         TamaSpacing.l,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Text('Tama', style: TamaText.titleL),
+          Text('TAMA', style: TamaText.titleL.copyWith(fontSize: 26)),
           const SizedBox(width: TamaSpacing.xs),
           Container(
-            width: 6,
-            height: 6,
+            width: 8,
+            height: 8,
             decoration: const BoxDecoration(
               color: TamaColors.accent,
               shape: BoxShape.circle,
@@ -87,7 +98,7 @@ class _BrandHeader extends StatelessWidget {
   }
 }
 
-/// Bannière de la série mise en avant (sort_order le plus bas).
+/// Bannière de la série mise en avant : une affiche pleine, qui respire.
 class _FeaturedBanner extends ConsumerWidget {
   const _FeaturedBanner({required this.series});
 
@@ -107,22 +118,25 @@ class _FeaturedBanner extends ConsumerWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(TamaRadius.card),
           child: AspectRatio(
-            aspectRatio: 3 / 4,
+            aspectRatio: 4 / 5,
             child: Stack(
               fit: StackFit.expand,
               children: [
-                SeriesCover(
-                  series: series,
-                  borderRadius: BorderRadius.zero,
-                  showTitle: false,
+                // Le zoom lent est appliqué sous les voiles : le texte, lui,
+                // ne bouge pas.
+                Breathing(
+                  child: SeriesCover(
+                    series: series,
+                    borderRadius: BorderRadius.zero,
+                    showTitle: false,
+                  ),
                 ),
-                // Dégradé de lisibilité vers le bas de la bannière.
                 const DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      stops: [0.35, 0.7, 1],
+                      stops: [0.3, 0.72, 1],
                       colors: [
                         Colors.transparent,
                         TamaColors.scrim,
@@ -138,14 +152,13 @@ class _FeaturedBanner extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (series.genre != null)
-                        Text(
-                          series.genre!.toUpperCase(),
-                          style: TamaText.label
-                              .copyWith(color: TamaColors.accent),
-                        ),
-                      const SizedBox(height: TamaSpacing.xs),
-                      Text(series.title, style: TamaText.titleXL),
+                      if (series.genre != null) GenreChip(genre: series.genre!),
+                      const SizedBox(height: TamaSpacing.m),
+                      Text(
+                        series.title.toUpperCase(),
+                        style: TamaText.poster,
+                        maxLines: 3,
+                      ),
                       if (series.synopsis != null) ...[
                         const SizedBox(height: TamaSpacing.s),
                         Text(
@@ -159,15 +172,19 @@ class _FeaturedBanner extends ConsumerWidget {
                       Row(
                         children: [
                           FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              backgroundColor:
+                                  TamaColors.forGenre(series.genre),
+                            ),
                             onPressed: () =>
                                 startWatching(context, ref, series),
                             icon: const Icon(Icons.play_arrow_rounded),
-                            label: const Text('Regarder'),
+                            label: const Text('REGARDER'),
                           ),
                           const SizedBox(width: TamaSpacing.m),
                           Text(
-                            '${series.totalEpisodes} épisodes',
-                            style: TamaText.bodyMuted,
+                            '${series.totalEpisodes} ÉPISODES',
+                            style: TamaText.label,
                           ),
                         ],
                       ),
@@ -195,15 +212,17 @@ class _ContinueRail extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionHeader('Reprendre'),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: TamaSpacing.l),
+          child: SectionHeader('Reprendre'),
+        ),
         SizedBox(
-          height: 200,
+          height: 148,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: TamaSpacing.l),
             itemCount: entries.length,
-            separatorBuilder: (_, __) =>
-                const SizedBox(width: TamaSpacing.m),
+            separatorBuilder: (_, __) => const SizedBox(width: TamaSpacing.s),
             itemBuilder: (_, i) => _ContinueCard(entry: entries[i]),
           ),
         ),
@@ -220,47 +239,20 @@ class _ContinueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fraction =
-        entry.progress.fractionOf(entry.episode.durationSeconds);
+    final fraction = entry.progress.fractionOf(entry.episode.durationSeconds);
+    final couleur = TamaColors.forGenre(entry.series.genre);
     return GestureDetector(
       onTap: () => context.push('/watch/${entry.episode.id}'),
       child: SizedBox(
-        width: 110,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        width: 96,
+        child: Stack(
           children: [
-            SizedBox(
-              height: 152,
-              width: 110,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: SeriesCover(series: entry.series, showTitle: false),
-                  ),
-                  // Barre de progression posée sur le bas de la vignette.
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                        bottom: Radius.circular(TamaRadius.card),
-                      ),
-                      child: LinearProgressIndicator(
-                        value: fraction,
-                        minHeight: 3,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: TamaSpacing.s),
-            Text(
-              'Ép. ${entry.episode.episodeNumber} · ${entry.series.title}',
-              style: TamaText.bodyMuted,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            Positioned.fill(child: SeriesCover(series: entry.series)),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: ProgressStroke(fraction: fraction, couleur: couleur),
             ),
           ],
         ),
@@ -278,45 +270,25 @@ class _GenreRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = genre.isEmpty
-        ? 'Autres'
-        : '${genre[0].toUpperCase()}${genre.substring(1)}';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader(title),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: TamaSpacing.l),
+          child: SectionHeader(genre, couleur: TamaColors.forGenre(genre)),
+        ),
         SizedBox(
-          height: 248,
+          height: 150,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: TamaSpacing.l),
             itemCount: series.length,
-            separatorBuilder: (_, __) =>
-                const SizedBox(width: TamaSpacing.m),
-            itemBuilder: (_, i) => SeriesCard(series: series[i], width: 110),
+            separatorBuilder: (_, __) => const SizedBox(width: TamaSpacing.s),
+            itemBuilder: (_, i) => SeriesCard(series: series[i], width: 96),
           ),
         ),
         const SizedBox(height: TamaSpacing.xl),
       ],
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.title);
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        TamaSpacing.l,
-        0,
-        TamaSpacing.l,
-        TamaSpacing.m,
-      ),
-      child: Text(title, style: TamaText.titleM),
     );
   }
 }

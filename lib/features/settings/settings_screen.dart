@@ -29,10 +29,10 @@ class SettingsScreen extends ConsumerWidget {
           TamaSpacing.l,
           TamaSpacing.m,
           TamaSpacing.l,
-          TamaSpacing.xxl,
+          TamaSpacing.navBar,
         ),
         children: [
-          const Text('Réglages', style: TamaText.titleXL),
+          const Text('RÉGLAGES', style: TamaText.titleXL),
           const SizedBox(height: TamaSpacing.xl),
 
           // ---- Compte -------------------------------------------------

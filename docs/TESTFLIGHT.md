@@ -16,11 +16,10 @@ Processus Xcode Cloud **« Tama TV »**, créé le 21 août 2026.
 | Environnement | Xcode « Latest Release » · macOS « Latest Release » |
 | Variables d'environnement | aucune (l'app tourne en mode démo) |
 
-**État au 21 août 2026** : TestFlight distribue le build 119, mais
-**aucune poussée sur `main` ne déclenche de build** — le processus ne
-connaît pas le dépôt de Tama. Il reste à le recréer, en appliquant
-d'abord la parade décrite plus bas. Le tableau ci-dessus est la référence
-des réglages à reproduire.
+**État au 21 août 2026 : en service.** Chaque poussée sur `main` déclenche
+un build, qui arrive dans TestFlight. Le tableau ci-dessus est la
+référence des réglages à reproduire en cas de perte — la ligne
+**Préparation de la distribution** en particulier.
 
 ### L'incident du 21 août 2026
 
@@ -52,10 +51,8 @@ différent.
 3. Supprimer « Workflow erea », resté dans le produit `tama` : il aurait
    compilé le code d'Erea sous l'app Tama TV.
 
-**État final** : Erea a retrouvé son produit `erea` et son processus, qui
-fonctionne. Tama TV, elle, reste attachée au produit `tama` hérité du vol,
-dont le processus n'a jamais connu le dépôt de Tama : il ne se déclenche
-sur aucune poussée. Il doit être recréé — voir ci-dessous.
+**État final** : chaque app a son produit et son processus. Erea compile
+sous `erea`, Tama TV sous `tama`, et les deux livrent sur TestFlight.
 
 ### ⚠️ Numéro de build après une recréation de produit
 
@@ -67,9 +64,20 @@ Après toute recréation d'un produit : Xcode Cloud → Réglages → **Numéro
 du build** → régler le numéro du *prochain* build **au-dessus** du dernier
 déjà envoyé (120 au minimum pour Tama, 119 l'ayant été pour Erea).
 
-### Recréer le processus sans voler Erea une seconde fois
+### Aucun build n'arrive ? Regarder l'action Archiver d'abord
 
-Le dépôt porte désormais un schéma **`TamaTV`**, partagé et archivable
+Le 21 août, plus rien n'est remonté dans TestFlight après plusieurs
+poussées. La cause n'était ni le dépôt, ni le produit : la **préparation
+de la distribution** de l'action Archiver avait été passée sur
+« TestFlight (tests internes uniquement) ». Elle doit rester sur **« App
+Store Connect »**.
+
+C'est le premier réglage à vérifier — avant de toucher au processus, et
+surtout avant de le recréer, geste qui a déjà volé le produit d'Erea.
+
+### Si un jour il faut recréer le processus
+
+Le dépôt porte un schéma **`TamaTV`**, partagé et archivable
 (`ios/Runner.xcodeproj/xcshareddata/xcschemes/TamaTV.xcscheme`), copie
 conforme de `Runner`. Il existe pour une seule raison : aucun autre projet
 du studio n'expose de produit portant ce nom, donc App Store Connect n'a
@@ -79,20 +87,19 @@ rien à réutiliser et crée un produit neuf. `Runner` reste en place,
 Sur le Mac, dans l'ordre :
 
 1. `git pull` dans le dépôt Tama, pour récupérer le schéma.
-2. App Store Connect → Tama TV → Xcode Cloud → supprimer le processus
-   « Tama TV » actuel : il est inerte et ne ferait que polluer la liste.
-3. Ouvrir `ios/Runner.xcworkspace` dans Xcode — **et fermer les autres
+2. Ouvrir `ios/Runner.xcworkspace` dans Xcode — **et fermer les autres
    projets Flutter**, pour ne pas laisser l'assistant piocher ailleurs.
-4. Integrate → **Create Workflow…** → à l'écran de choix du produit,
+3. Integrate → **Create Workflow…** → à l'écran de choix du produit,
    prendre **`TamaTV`**, jamais `Runner`.
-5. Écran « Confirm App » : vérifier que c'est bien **Tama TV**, pas une
+4. Écran « Confirm App » : vérifier que c'est bien **Tama TV**, pas une
    autre app du studio. C'est le dernier point d'arrêt avant le vol.
-6. Régler l'action **Archiver** comme dans le tableau en tête de page :
+5. Régler l'action **Archiver** comme dans le tableau en tête de page :
    configuration Release, préparation de la distribution sur **App Store
    Connect**, condition de démarrage sur la branche `main`.
-7. Xcode Cloud → Réglages → **Numéro du build** → mettre **120** au
-   minimum : un produit neuf repart à 1, sous le 119 déjà envoyé.
-8. Ouvrir la page Xcode Cloud d'**Erea** et vérifier qu'elle a toujours
+6. Xcode Cloud → Réglages → **Numéro du build** → mettre le numéro du
+   prochain build au-dessus du dernier envoyé : un produit neuf repart
+   à 1, donc sous les builds déjà déposés.
+7. Ouvrir la page Xcode Cloud d'**Erea** et vérifier qu'elle a toujours
    son produit `erea` et son processus.
 
 Pour Train Cosy et Drama, appliquer la même parade avant toute

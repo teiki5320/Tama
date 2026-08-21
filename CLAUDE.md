@@ -106,7 +106,10 @@ et vérifier qu'elles ont toujours la leur, avec le bon nom de produit.
 - **Xcode Cloud, action *Archiver*** : la préparation de la distribution
   doit rester sur **« App Store Connect »**. Sur « TestFlight (tests
   internes uniquement) », les builds n'apparaissent jamais dans la liste
-  de sélection d'une version.
+  de sélection d'une version. **C'est le premier réglage à vérifier quand
+  plus rien n'arrive dans TestFlight** — le 21/08/2026 il a coûté une
+  fausse piste (« le processus ne connaît pas le dépôt ») et une
+  recréation de processus qui aurait à nouveau volé le produit d'Erea.
 - **La version de `pubspec.yaml` doit être identique** à celle saisie dans
   App Store Connect, sinon le build est non sélectionnable.
 - **Swift Package Manager doit rester désactivé** : les stables récentes

@@ -63,10 +63,13 @@ Puis Integrate → Create Workflow… et **choisir le schéma au nom de
 l'app**. Aucun produit ne portant ce nom, App Store Connect en crée un
 neuf : plus rien à voler.
 
-**Sur une app dont le produit fonctionne déjà** (Erea, Tama) : ne plus
-jamais lancer Create Workflow… depuis Xcode. Tout se règle depuis App
-Store Connect → Xcode Cloud → Gérer les processus. C'est cette commande,
-et elle seule, qui a déclenché le vol.
+Tama a le sien : `TamaTV`, dans
+`ios/Runner.xcodeproj/xcshareddata/xcschemes/`.
+
+**Sur une app dont le produit fonctionne déjà** (Erea) : ne plus jamais
+lancer Create Workflow… depuis Xcode. Tout se règle depuis App Store
+Connect → Xcode Cloud → Gérer les processus. C'est cette commande, et elle
+seule, qui a déclenché le vol.
 
 **Après chaque configuration**, ouvrir la page Xcode Cloud des autres apps
 et vérifier qu'elles ont toujours la leur, avec le bon nom de produit.

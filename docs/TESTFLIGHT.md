@@ -16,9 +16,11 @@ Processus Xcode Cloud **« Tama TV »**, créé le 21 août 2026.
 | Environnement | Xcode « Latest Release » · macOS « Latest Release » |
 | Variables d'environnement | aucune (l'app tourne en mode démo) |
 
-**État au 21 août 2026 : rétabli et fonctionnel** — Tama TV reçoit ses
-builds sur TestFlight. Le tableau ci-dessus reste la référence en cas de
-perte.
+**État au 21 août 2026** : TestFlight distribue le build 119, mais
+**aucune poussée sur `main` ne déclenche de build** — le processus ne
+connaît pas le dépôt de Tama. Il reste à le recréer, en appliquant
+d'abord la parade décrite plus bas. Le tableau ci-dessus est la référence
+des réglages à reproduire.
 
 ### L'incident du 21 août 2026
 
@@ -50,9 +52,10 @@ différent.
 3. Supprimer « Workflow erea », resté dans le produit `tama` : il aurait
    compilé le code d'Erea sous l'app Tama TV.
 
-**État final** : chaque app a de nouveau son produit et son processus.
-Erea compile sous `erea`, Tama TV sous le sien, et les deux livrent sur
-TestFlight.
+**État final** : Erea a retrouvé son produit `erea` et son processus, qui
+fonctionne. Tama TV, elle, reste attachée au produit `tama` hérité du vol,
+dont le processus n'a jamais connu le dépôt de Tama : il ne se déclenche
+sur aucune poussée. Il doit être recréé — voir ci-dessous.
 
 ### ⚠️ Numéro de build après une recréation de produit
 
@@ -64,15 +67,36 @@ Après toute recréation d'un produit : Xcode Cloud → Réglages → **Numéro
 du build** → régler le numéro du *prochain* build **au-dessus** du dernier
 déjà envoyé (120 au minimum pour Tama, 119 l'ayant été pour Erea).
 
-### Ne plus relancer « Create Workflow… » sur cette app
+### Recréer le processus sans voler Erea une seconde fois
 
-C'est cette commande, et elle seule, qui a déclenché le vol. Le produit de
-Tama existe et fonctionne : tout se règle désormais depuis App Store
-Connect → Xcode Cloud → **Gérer les processus**.
+Le dépôt porte désormais un schéma **`TamaTV`**, partagé et archivable
+(`ios/Runner.xcodeproj/xcshareddata/xcschemes/TamaTV.xcscheme`), copie
+conforme de `Runner`. Il existe pour une seule raison : aucun autre projet
+du studio n'expose de produit portant ce nom, donc App Store Connect n'a
+rien à réutiliser et crée un produit neuf. `Runner` reste en place,
+`flutter build ios` s'en sert.
 
-Pour la prochaine app Flutter du studio — Train Cosy, Drama — appliquer
-d'abord la parade : lui donner un **schéma à son nom**, partagé, avant de
-lancer l'assistant. Voir « Ranger les apps Flutter dans Xcode Cloud » dans
+Sur le Mac, dans l'ordre :
+
+1. `git pull` dans le dépôt Tama, pour récupérer le schéma.
+2. App Store Connect → Tama TV → Xcode Cloud → supprimer le processus
+   « Tama TV » actuel : il est inerte et ne ferait que polluer la liste.
+3. Ouvrir `ios/Runner.xcworkspace` dans Xcode — **et fermer les autres
+   projets Flutter**, pour ne pas laisser l'assistant piocher ailleurs.
+4. Integrate → **Create Workflow…** → à l'écran de choix du produit,
+   prendre **`TamaTV`**, jamais `Runner`.
+5. Écran « Confirm App » : vérifier que c'est bien **Tama TV**, pas une
+   autre app du studio. C'est le dernier point d'arrêt avant le vol.
+6. Régler l'action **Archiver** comme dans le tableau en tête de page :
+   configuration Release, préparation de la distribution sur **App Store
+   Connect**, condition de démarrage sur la branche `main`.
+7. Xcode Cloud → Réglages → **Numéro du build** → mettre **120** au
+   minimum : un produit neuf repart à 1, sous le 119 déjà envoyé.
+8. Ouvrir la page Xcode Cloud d'**Erea** et vérifier qu'elle a toujours
+   son produit `erea` et son processus.
+
+Pour Train Cosy et Drama, appliquer la même parade avant toute
+configuration : voir « Ranger les apps Flutter dans Xcode Cloud » dans
 `CLAUDE.md`.
 
 

@@ -42,6 +42,35 @@ SDK, les pods, écrit `Generated.xcconfig`) et `ci_pre_xcodebuild.sh`
 doivent rester exécutables** (`chmod +x`), sinon Xcode Cloud les ignore
 en silence et l'archive échoue sur un exit 65 illisible.
 
+### Ranger les apps Flutter dans Xcode Cloud
+
+Un « produit » Xcode Cloud est identifié par **le nom du schéma
+archivable**, pas par l'identifiant d'app ni par le dépôt. Xcode dresse la
+liste avec `xcodebuild -describeAllArchivableProducts` ; tout projet
+Flutter y répond `Runner`. D'où la collision : App Store Connect retrouve
+un produit `Runner` déjà connu et le réutilise, pour une autre app.
+
+**Avant de configurer Xcode Cloud sur une app Flutter, lui donner un
+schéma à son nom** (dans Xcode : Product → Scheme → Manage Schemes… →
+dupliquer `Runner`, le renommer `TrainCosy`, cocher **Shared**). Trois
+conditions à vérifier :
+
+- le schéma est **partagé** — sinon Xcode Cloud ne le voit pas ;
+- son action **Archive** est cochée ;
+- `Runner` reste en place : `flutter build ios` s'en sert.
+
+Puis Integrate → Create Workflow… et **choisir le schéma au nom de
+l'app**. Aucun produit ne portant ce nom, App Store Connect en crée un
+neuf : plus rien à voler.
+
+**Sur une app dont le produit fonctionne déjà** (Erea, Tama) : ne plus
+jamais lancer Create Workflow… depuis Xcode. Tout se règle depuis App
+Store Connect → Xcode Cloud → Gérer les processus. C'est cette commande,
+et elle seule, qui a déclenché le vol.
+
+**Après chaque configuration**, ouvrir la page Xcode Cloud des autres apps
+et vérifier qu'elles ont toujours la leur, avec le bon nom de produit.
+
 ## Les pièges déjà payés
 
 - ⚠️ **Configurer Xcode Cloud pour une app Flutter peut voler le produit
@@ -69,9 +98,8 @@ en silence et l'archive échoue sur un exit 65 illisible.
      Xcode Cloud → Réglages → **Numéro du build**. Le champ est le numéro
      du *prochain* build : il doit être **supérieur** au dernier existant
      (Erea était à 118 → réglé sur 119).
-  **Prévention** : après toute configuration Xcode Cloud, vérifier que les
-  autres apps ont toujours leur propre page Xcode Cloud. Concerne aussi
-  Train Cosy et Drama, également en Flutter.
+  **Prévention** : voir « Ranger les apps Flutter dans Xcode Cloud »
+  ci-dessous — à appliquer avant de configurer Train Cosy et Drama.
 - **Xcode Cloud, action *Archiver*** : la préparation de la distribution
   doit rester sur **« App Store Connect »**. Sur « TestFlight (tests
   internes uniquement) », les builds n'apparaissent jamais dans la liste

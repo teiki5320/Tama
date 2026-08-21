@@ -16,10 +16,11 @@ Processus Xcode Cloud **« Tama TV »**, créé le 21 août 2026.
 | Environnement | Xcode « Latest Release » · macOS « Latest Release » |
 | Variables d'environnement | aucune (l'app tourne en mode démo) |
 
-**État au 21 août 2026 : ce processus a été supprimé.** Le tableau
-ci-dessus reste la référence pour le recréer.
+**État au 21 août 2026 : rétabli et fonctionnel** — Tama TV reçoit ses
+builds sur TestFlight. Le tableau ci-dessus reste la référence en cas de
+perte.
 
-### Pourquoi il a été supprimé
+### L'incident du 21 août 2026
 
 En créant ce processus depuis Xcode, l'assistant a rangé la recette de
 Tama dans le produit Xcode Cloud **d'Erea** au lieu d'en créer un neuf,
@@ -31,10 +32,12 @@ l'a renommé « tama » et l'a repointé vers Tama TV. Conséquences observées 
 - le processus de Tama affichait « Primary Repository Not Found », le
   produit ne connaissant que le dépôt d'Erea.
 
-**La cause** : tous les projets Flutter ont un schéma et un espace de
-travail nommés `Runner`. L'assistant a reconnu « un projet Runner déjà
-connu » et réutilisé son produit, sans tenir compte de l'identifiant
-d'app pourtant différent.
+**La cause** : un produit Xcode Cloud est identifié par le **nom du schéma
+archivable**. Xcode dresse la liste des produits configurables avec
+`xcodebuild -describeAllArchivableProducts` ; tout projet Flutter y répond
+`Runner`. App Store Connect a donc retrouvé un produit `Runner` déjà connu
+et l'a réutilisé, sans tenir compte de l'identifiant d'app pourtant
+différent.
 
 **La réparation**, appliquée le 21 août, en trois temps :
 
@@ -47,29 +50,30 @@ d'app pourtant différent.
 3. Supprimer « Workflow erea », resté dans le produit `tama` : il aurait
    compilé le code d'Erea sous l'app Tama TV.
 
-**État final** : Erea a son produit `erea` et son processus. Tama TV
-conserve le produit `tama` avec un processus « Tama TV » **cassé**
-(« Primary Repository Not Found », le dépôt de Tama n'ayant jamais été
-enregistré dans ce produit). Il ne peut rien déclencher.
+**État final** : chaque app a de nouveau son produit et son processus.
+Erea compile sous `erea`, Tama TV sous le sien, et les deux livrent sur
+TestFlight.
 
-### ⚠️ Numéro de build à régler si l'on recrée le processus
+### ⚠️ Numéro de build après une recréation de produit
 
 Le build 119 de Tama porte ce numéro parce qu'il a hérité du compteur
 d'Erea pendant la mésaventure. Un produit Xcode Cloud neuf repart à 1,
 donc **sous** 119 : Apple refuserait les builds suivants.
 
-Après toute recréation du produit : Xcode Cloud → Réglages → **Numéro du
-build** → régler le numéro du *prochain* build à **120** au minimum.
+Après toute recréation d'un produit : Xcode Cloud → Réglages → **Numéro
+du build** → régler le numéro du *prochain* build **au-dessus** du dernier
+déjà envoyé (120 au minimum pour Tama, 119 l'ayant été pour Erea).
 
-### Avant de recréer ce processus
+### Ne plus relancer « Create Workflow… » sur cette app
 
-Le build 119, vert, a été produit avant tout cela : Tama a déjà la preuve
-que sa chaîne fonctionne, et l'archivage depuis un Mac prend 38 secondes.
-Rien ne presse.
+C'est cette commande, et elle seule, qui a déclenché le vol. Le produit de
+Tama existe et fonctionne : tout se règle désormais depuis App Store
+Connect → Xcode Cloud → **Gérer les processus**.
 
-Quand on s'y remettra, **vérifier juste après que les pages Xcode Cloud
-d'Erea, Train Cosy et Drama sont toujours garnies** — toutes trois sont
-en Flutter et exposées au même piège.
+Pour la prochaine app Flutter du studio — Train Cosy, Drama — appliquer
+d'abord la parade : lui donner un **schéma à son nom**, partagé, avant de
+lancer l'assistant. Voir « Ranger les apps Flutter dans Xcode Cloud » dans
+`CLAUDE.md`.
 
 
 Méthode retenue : **Xcode Cloud**, comme les autres apps du studio.

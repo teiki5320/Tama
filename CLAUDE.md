@@ -63,7 +63,12 @@ en silence et l'archive échoue sur un exit 65 illisible.
      Workflow…, et confirmer **son** app à l'écran « Confirm App ». Xcode
      crée alors un produit neuf, correctement rattaché ;
   3. supprimer l'ancien processus resté dans le produit usurpateur, sinon
-     il compilerait le code de l'app volée sous la mauvaise app.
+     il compilerait le code de l'app volée sous la mauvaise app ;
+  4. **remettre le compteur de builds** : un produit neuf repart à 1, donc
+     en dessous des builds déjà envoyés, et Apple refuserait les suivants.
+     Xcode Cloud → Réglages → **Numéro du build**. Le champ est le numéro
+     du *prochain* build : il doit être **supérieur** au dernier existant
+     (Erea était à 118 → réglé sur 119).
   **Prévention** : après toute configuration Xcode Cloud, vérifier que les
   autres apps ont toujours leur propre page Xcode Cloud. Concerne aussi
   Train Cosy et Drama, également en Flutter.

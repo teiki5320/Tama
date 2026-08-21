@@ -16,18 +16,39 @@ Processus Xcode Cloud **« Tama TV »**, créé le 21 août 2026.
 | Environnement | Xcode « Latest Release » · macOS « Latest Release » |
 | Variables d'environnement | aucune (l'app tourne en mode démo) |
 
-⚠️ **Piège rencontré le 21 août 2026** : en créant ce processus depuis
-Xcode, l'assistant a rattaché Tama TV à un produit Xcode Cloud **déjà
-existant** (celui d'Erea) au lieu d'en créer un neuf. Résultat : les deux
-processus se sont retrouvés sous Tama TV, la page Xcode Cloud d'Erea s'est
-vidée, et les deux apps partagent le même compteur de builds (Erea 118 →
-Tama 119). Aucun build n'a été perdu, mais l'intégration continue d'Erea
-s'est arrêtée.
+**État au 21 août 2026 : ce processus a été supprimé.** Le tableau
+ci-dessus reste la référence pour le recréer.
 
-**À vérifier impérativement pour toute nouvelle app** : à l'écran
-« Confirm App on App Store Connect », l'app affichée doit être celle qu'on
-configure. Et après création, contrôler que les autres apps ont toujours
-leurs propres processus.
+### Pourquoi il a été supprimé
+
+En créant ce processus depuis Xcode, l'assistant a rangé la recette de
+Tama dans le produit Xcode Cloud **d'Erea** au lieu d'en créer un neuf,
+l'a renommé « tama » et l'a repointé vers Tama TV. Conséquences observées :
+
+- la page Xcode Cloud d'Erea s'est vidée, son intégration continue arrêtée ;
+- les deux processus figuraient sous Tama TV ;
+- les compteurs de build se suivaient (Erea 118 → Tama 119) ;
+- le processus de Tama affichait « Primary Repository Not Found », le
+  produit ne connaissant que le dépôt d'Erea.
+
+**La cause** : tous les projets Flutter ont un schéma et un espace de
+travail nommés `Runner`. L'assistant a reconnu « un projet Runner déjà
+connu » et réutilisé son produit, sans tenir compte de l'identifiant
+d'app pourtant différent.
+
+**La réparation**, appliquée le 21 août : Xcode → Integrate → Manage
+Workflows… → supprimer le processus « Tama TV ». Erea a aussitôt retrouvé
+son produit et sa page.
+
+### Avant de recréer ce processus
+
+Le build 119, vert, a été produit avant la suppression : Tama a déjà sa
+preuve que la chaîne fonctionne, et l'archivage depuis un Mac prend
+38 secondes. Rien ne presse.
+
+Quand on le recréera, **vérifier juste après que les pages Xcode Cloud
+d'Erea, Train Cosy et Drama sont toujours garnies** — toutes trois sont
+en Flutter et exposées au même piège.
 
 
 Méthode retenue : **Xcode Cloud**, comme les autres apps du studio.

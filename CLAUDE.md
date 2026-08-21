@@ -44,6 +44,23 @@ en silence et l'archive échoue sur un exit 65 illisible.
 
 ## Les pièges déjà payés
 
+- ⚠️ **Configurer Xcode Cloud pour une app Flutter peut voler le produit
+  d'une autre app Flutter.** Tous les projets Flutter ont un schéma et un
+  espace de travail nommés `Runner` : l'assistant Xcode reconnaît « un
+  projet Runner déjà connu » et range le nouveau processus dans le produit
+  existant, au lieu d'en créer un neuf — sans vérifier que l'identifiant
+  d'app diffère. Le 21/08/2026, configurer Tama a renommé le produit
+  d'Erea en « tama » et l'a repointé vers Tama TV : la page Xcode Cloud
+  d'Erea s'est vidée et son intégration continue s'est arrêtée.
+  **Symptômes** : la page Xcode Cloud de l'ancienne app est vide ; les deux
+  processus apparaissent sous la nouvelle app ; les numéros de build se
+  suivent d'une app à l'autre (Erea 118 → Tama 119) ; le processus de la
+  nouvelle app affiche « Primary Repository Not Found ».
+  **Réparation** : Xcode → Integrate → Manage Workflows… → supprimer le
+  processus de la NOUVELLE app. L'ancienne retrouve son produit.
+  **Prévention** : après toute configuration Xcode Cloud, vérifier que les
+  autres apps ont toujours leur propre page Xcode Cloud. Concerne aussi
+  Train Cosy et Drama, également en Flutter.
 - **Xcode Cloud, action *Archiver*** : la préparation de la distribution
   doit rester sur **« App Store Connect »**. Sur « TestFlight (tests
   internes uniquement) », les builds n'apparaissent jamais dans la liste

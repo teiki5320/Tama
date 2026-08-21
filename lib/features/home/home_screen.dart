@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/async_view.dart';
 import '../../core/widgets/poster.dart';
@@ -117,8 +118,9 @@ class _FeaturedBanner extends ConsumerWidget {
         onTap: () => context.push('/series/${series.id}'),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(TamaRadius.card),
-          child: AspectRatio(
-            aspectRatio: 4 / 5,
+          child: SizedBox(
+            height: TamaLayout.bannerHeight(context),
+            width: double.infinity,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -149,46 +151,59 @@ class _FeaturedBanner extends ConsumerWidget {
                   left: TamaSpacing.l,
                   right: TamaSpacing.l,
                   bottom: TamaSpacing.l,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (series.genre != null) GenreChip(genre: series.genre!),
-                      const SizedBox(height: TamaSpacing.m),
-                      Text(
-                        series.title.toUpperCase(),
-                        style: TamaText.poster,
-                        maxLines: 3,
+                  // Sur grand écran, le bloc de titre ne s'étire pas sur
+                  // toute la largeur : il resterait illisible.
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: TamaLayout.readableWidth,
                       ),
-                      if (series.synopsis != null) ...[
-                        const SizedBox(height: TamaSpacing.s),
-                        Text(
-                          series.synopsis!,
-                          style: TamaText.bodyMuted,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                      const SizedBox(height: TamaSpacing.l),
-                      Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          FilledButton.icon(
-                            style: FilledButton.styleFrom(
-                              backgroundColor:
-                                  TamaColors.forGenre(series.genre),
-                            ),
-                            onPressed: () =>
-                                startWatching(context, ref, series),
-                            icon: const Icon(Icons.play_arrow_rounded),
-                            label: const Text('REGARDER'),
-                          ),
-                          const SizedBox(width: TamaSpacing.m),
+                          if (series.genre != null)
+                            GenreChip(genre: series.genre!),
+                          const SizedBox(height: TamaSpacing.m),
                           Text(
-                            '${series.totalEpisodes} ÉPISODES',
-                            style: TamaText.label,
+                            series.title.toUpperCase(),
+                            style: TamaText.poster.copyWith(
+                              fontSize: TamaLayout.posterFontSize(context),
+                            ),
+                            maxLines: 3,
+                          ),
+                          if (series.synopsis != null) ...[
+                            const SizedBox(height: TamaSpacing.s),
+                            Text(
+                              series.synopsis!,
+                              style: TamaText.bodyMuted,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                          const SizedBox(height: TamaSpacing.l),
+                          Row(
+                            children: [
+                              FilledButton.icon(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor:
+                                      TamaColors.forGenre(series.genre),
+                                ),
+                                onPressed: () =>
+                                    startWatching(context, ref, series),
+                                icon: const Icon(Icons.play_arrow_rounded),
+                                label: const Text('REGARDER'),
+                              ),
+                              const SizedBox(width: TamaSpacing.m),
+                              Text(
+                                '${series.totalEpisodes} ÉPISODES',
+                                style: TamaText.label,
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -217,7 +232,7 @@ class _ContinueRail extends ConsumerWidget {
           child: SectionHeader('Reprendre'),
         ),
         SizedBox(
-          height: 148,
+          height: TamaLayout.railHeight(context),
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: TamaSpacing.l),
@@ -244,7 +259,7 @@ class _ContinueCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.push('/watch/${entry.episode.id}'),
       child: SizedBox(
-        width: 96,
+        width: TamaLayout.posterWidth(context),
         child: Stack(
           children: [
             Positioned.fill(child: SeriesCover(series: entry.series)),
@@ -278,13 +293,16 @@ class _GenreRail extends StatelessWidget {
           child: SectionHeader(genre, couleur: TamaColors.forGenre(genre)),
         ),
         SizedBox(
-          height: 150,
+          height: TamaLayout.railHeight(context),
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: TamaSpacing.l),
             itemCount: series.length,
             separatorBuilder: (_, __) => const SizedBox(width: TamaSpacing.s),
-            itemBuilder: (_, i) => SeriesCard(series: series[i], width: 96),
+            itemBuilder: (_, i) => SeriesCard(
+              series: series[i],
+              width: TamaLayout.posterWidth(context),
+            ),
           ),
         ),
         const SizedBox(height: TamaSpacing.xl),

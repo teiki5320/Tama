@@ -33,8 +33,7 @@ class TamaApp extends ConsumerStatefulWidget {
   ConsumerState<TamaApp> createState() => _TamaAppState();
 }
 
-class _TamaAppState extends ConsumerState<TamaApp>
-    with WidgetsBindingObserver {
+class _TamaAppState extends ConsumerState<TamaApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();

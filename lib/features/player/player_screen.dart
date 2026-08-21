@@ -23,9 +23,8 @@ class PlayerContext {
   final int initialIndex;
 }
 
-final playerContextProvider =
-    FutureProvider.autoDispose.family<PlayerContext?, String>(
-        (ref, episodeId) async {
+final playerContextProvider = FutureProvider.autoDispose
+    .family<PlayerContext?, String>((ref, episodeId) async {
   final episodeRepo = ref.watch(episodeRepositoryProvider);
   final seriesRepo = ref.watch(seriesRepositoryProvider);
   final episode = await episodeRepo.fetchById(episodeId);
@@ -74,8 +73,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       backgroundColor: TamaColors.background,
       body: AsyncView<PlayerContext?>(
         value: contextAsync,
-        onRetry: () =>
-            ref.invalidate(playerContextProvider(widget.episodeId)),
+        onRetry: () => ref.invalidate(playerContextProvider(widget.episodeId)),
         builder: (playerContext) {
           if (playerContext == null) {
             return EmptyView(

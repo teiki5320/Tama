@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/async_view.dart';
 import '../../core/widgets/poster.dart';
@@ -57,12 +58,11 @@ class FavoritesScreen extends ConsumerWidget {
                 : GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: TamaLayout.favoriteColumns(context),
                       mainAxisSpacing: TamaSpacing.l,
                       crossAxisSpacing: TamaSpacing.m,
-                      childAspectRatio: 0.46,
+                      childAspectRatio: 9 / 14,
                     ),
                     itemCount: list.length,
                     itemBuilder: (_, i) => SeriesCard(series: list[i]),
@@ -85,10 +85,21 @@ class FavoritesScreen extends ConsumerWidget {
                     title: 'Aucun épisode vu',
                     subtitle: 'Ton historique de visionnage apparaîtra ici.',
                   )
-                : Column(
-                    children: [
-                      for (final entry in entries) _HistoryRow(entry: entry),
-                    ],
+                // Une ligne d'historique est un texte suivi d'une commande :
+                // étirée sur une tablette, l'œil perd le lien entre les deux.
+                : Align(
+                    alignment: Alignment.centerLeft,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: TamaLayout.readableWidth,
+                      ),
+                      child: Column(
+                        children: [
+                          for (final entry in entries)
+                            _HistoryRow(entry: entry),
+                        ],
+                      ),
+                    ),
                   ),
           ),
         ],

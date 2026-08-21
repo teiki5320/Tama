@@ -8,13 +8,14 @@ import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../core/constants.dart';
+import '../../core/layout.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/poster.dart';
 import '../../models/episode.dart';
 import '../../models/series.dart';
 import '../../models/watch_progress.dart';
 import '../../providers/progress_providers.dart';
 import '../../providers/repositories_providers.dart';
-import '../../core/widgets/poster.dart';
 import '../../providers/settings_providers.dart';
 import '../../repositories/progress_repository.dart';
 import '../../services/analytics_service.dart';
@@ -230,8 +231,7 @@ class _EpisodePlayerPageState extends ConsumerState<EpisodePlayerPage> {
       }
     }
 
-    if (!_completed &&
-        position >= duration - TamaConstants.completionEpsilon) {
+    if (!_completed && position >= duration - TamaConstants.completionEpsilon) {
       _completed = true;
       _analytics.track(
         'episode_complete',
@@ -375,66 +375,78 @@ class _EpisodePlayerPageState extends ConsumerState<EpisodePlayerPage> {
     final controller = _controller;
     final videoReady = controller != null && controller.value.isInitialized;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: _togglePlayPause,
-      onDoubleTap: _seekForward,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // 1. Vidéo bord à bord — remplissage total, jamais de bande noire.
-          if (videoReady)
-            _CoverVideo(controller: controller)
-          else
-            _EpisodePlaceholder(
-              series: widget.series,
-              episode: widget.episode,
-              failed: _initFailed,
-              onRetry: _retry,
-            ),
+    // La scène est verticale. Sur un écran large, elle est cadrée dans une
+    // colonne centrée : la remplir bord à bord recadrerait la vidéo au point
+    // de n'en montrer qu'une bande.
+    return ColoredBox(
+      color: TamaColors.background,
+      child: Center(
+        child: SizedBox(
+          width: TamaLayout.stageWidth(context),
+          height: double.infinity,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _togglePlayPause,
+            onDoubleTap: _seekForward,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // 1. Vidéo bord à bord — remplissage total, jamais de bande noire.
+                if (videoReady)
+                  _CoverVideo(controller: controller)
+                else
+                  _EpisodePlaceholder(
+                    series: widget.series,
+                    episode: widget.episode,
+                    failed: _initFailed,
+                    onRetry: _retry,
+                  ),
 
-          // 2. Voiles haut/bas pour la lisibilité de l'overlay.
-          const _EdgeScrims(),
+                // 2. Voiles haut/bas pour la lisibilité de l'overlay.
+                const _EdgeScrims(),
 
-          // 3. Icône pause (état arrêté), reconstruite au fil du contrôleur.
-          if (videoReady && !_showEndCard)
-            ValueListenableBuilder<VideoPlayerValue>(
-              valueListenable: controller,
-              builder: (_, value, __) => value.isPlaying
-                  ? const SizedBox.shrink()
-                  : const Center(
-                      child: Icon(
-                        Icons.play_arrow_rounded,
-                        size: 72,
-                        color: TamaColors.text,
-                      ),
+                // 3. Icône pause (état arrêté), reconstruite au fil du contrôleur.
+                if (videoReady && !_showEndCard)
+                  ValueListenableBuilder<VideoPlayerValue>(
+                    valueListenable: controller,
+                    builder: (_, value, __) => value.isPlaying
+                        ? const SizedBox.shrink()
+                        : const Center(
+                            child: Icon(
+                              Icons.play_arrow_rounded,
+                              size: 72,
+                              color: TamaColors.text,
+                            ),
+                          ),
+                  ),
+
+                // 4. Overlay minimal auto-masqué (jamais cliquable quand masqué).
+                _PlayerOverlay(
+                  visible: _overlayVisible || !videoReady,
+                  series: widget.series,
+                  episode: widget.episode,
+                ),
+
+                // 5. Barre de progression fine, scrubbable.
+                if (videoReady)
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: _ScrubBar(
+                      controller: controller,
+                      couleur: TamaColors.forGenre(widget.series.genre),
                     ),
-            ),
+                  ),
 
-          // 4. Overlay minimal auto-masqué (jamais cliquable quand masqué).
-          _PlayerOverlay(
-            visible: _overlayVisible || !videoReady,
-            series: widget.series,
-            episode: widget.episode,
+                // 6. Carte de fin de série (dernier épisode).
+                if (_showEndCard)
+                  _EndCard(
+                    series: widget.series,
+                    onReplay: widget.onReplaySeries,
+                  ),
+              ],
+            ),
           ),
-
-          // 5. Barre de progression fine, scrubbable.
-          if (videoReady)
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: _ScrubBar(
-                controller: controller,
-                couleur: TamaColors.forGenre(widget.series.genre),
-              ),
-            ),
-
-          // 6. Carte de fin de série (dernier épisode).
-          if (_showEndCard)
-            _EndCard(
-              series: widget.series,
-              onReplay: widget.onReplaySeries,
-            ),
-        ],
+        ),
       ),
     );
   }
@@ -603,52 +615,51 @@ class _PlayerOverlay extends ConsumerWidget {
                 ),
               ),
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: TamaSpacing.s),
+                padding: const EdgeInsets.symmetric(horizontal: TamaSpacing.s),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                IconButton(
-                  tooltip: 'Retour',
-                  onPressed: () => context.pop(),
-                  icon: const Icon(
-                    Icons.arrow_back_rounded,
-                    color: TamaColors.text,
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: TamaSpacing.s),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          series.title.toUpperCase(),
-                          style: TamaText.titleM,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'ÉPISODE ${episode.episodeNumber}',
-                          style: TamaText.label,
-                        ),
-                      ],
+                    IconButton(
+                      tooltip: 'Retour',
+                      onPressed: () => context.pop(),
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: TamaColors.text,
+                      ),
                     ),
-                  ),
-                ),
-                FavoriteButton(seriesId: series.id),
-                IconButton(
-                  tooltip: 'Partager',
-                  onPressed: () => Share.share(
-                    '${series.title} — Épisode ${episode.episodeNumber}, '
-                    'à voir sur ${TamaConstants.appName}.',
-                  ),
-                  icon: const Icon(
-                    Icons.share_rounded,
-                    color: TamaColors.text,
-                  ),
-                ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: TamaSpacing.s),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              series.title.toUpperCase(),
+                              style: TamaText.titleM,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'ÉPISODE ${episode.episodeNumber}',
+                              style: TamaText.label,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    FavoriteButton(seriesId: series.id),
+                    IconButton(
+                      tooltip: 'Partager',
+                      onPressed: () => Share.share(
+                        '${series.title} — Épisode ${episode.episodeNumber}, '
+                        'à voir sur ${TamaConstants.appName}.',
+                      ),
+                      icon: const Icon(
+                        Icons.share_rounded,
+                        color: TamaColors.text,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -776,9 +787,7 @@ class _EndCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                series.isCompleted
-                    ? 'C\'est déjà la fin.'
-                    : 'À suivre…',
+                series.isCompleted ? 'C\'est déjà la fin.' : 'À suivre…',
                 style: TamaText.titleXL,
                 textAlign: TextAlign.center,
               ),

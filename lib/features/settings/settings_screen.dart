@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants.dart';
+import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/favorites_providers.dart';
@@ -24,145 +25,151 @@ class SettingsScreen extends ConsumerWidget {
 
     return SafeArea(
       bottom: false,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          TamaSpacing.l,
-          TamaSpacing.m,
-          TamaSpacing.l,
-          TamaSpacing.navBar,
-        ),
-        children: [
-          const Text('RÉGLAGES', style: TamaText.titleXL),
-          const SizedBox(height: TamaSpacing.xl),
-
-          // ---- Compte -------------------------------------------------
-          _Section(
-            title: 'Compte',
-            children: [
-              if (isDemo)
-                const ListTile(
-                  leading: Icon(Icons.person_outline_rounded),
-                  title: Text('Mode démo', style: TamaText.body),
-                  subtitle: Text(
-                    'Supabase non configuré — comptes désactivés pour l\'instant.',
-                    style: TamaText.bodyMuted,
-                  ),
-                )
-              else if (user == null)
-                ListTile(
-                  leading: const Icon(Icons.login_rounded),
-                  title: const Text(
-                    'Se connecter ou créer un compte',
-                    style: TamaText.body,
-                  ),
-                  subtitle: const Text(
-                    'Sauvegarde ta progression et tes favoris.',
-                    style: TamaText.bodyMuted,
-                  ),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => showAuthSheet(context),
-                )
-              else ...[
-                ListTile(
-                  leading: const Icon(Icons.person_rounded),
-                  title: Text(user.email ?? 'Mon compte',
-                      style: TamaText.body),
-                  subtitle:
-                      const Text('Connecté', style: TamaText.bodyMuted),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.logout_rounded),
-                  title:
-                      const Text('Se déconnecter', style: TamaText.body),
-                  onTap: () async {
-                    await ref
-                        .read(supabaseClientProvider)
-                        ?.auth
-                        .signOut();
-                    ref.read(progressVersionProvider.notifier).state++;
-                    ref.invalidate(favoriteIdsProvider);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('À bientôt.')),
-                      );
-                    }
-                  },
-                ),
-              ],
-            ],
+      // Un écran de réglages est une colonne de formulaire : elle ne gagne
+      // rien à s'étirer sur toute la largeur d'une tablette.
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: TamaLayout.readableWidth,
           ),
-
-          // ---- Lecture ------------------------------------------------
-          _Section(
-            title: 'Lecture',
-            children: [
-              SwitchListTile(
-                value: settings.dataSaver,
-                onChanged: (v) =>
-                    ref.read(settingsProvider.notifier).setDataSaver(v),
-                title: const Text(
-                  'Mode données réduites',
-                  style: TamaText.body,
-                ),
-                subtitle: const Text(
-                  '480p max et préchargement coupé — pensé pour la 3G.',
-                  style: TamaText.bodyMuted,
-                ),
-              ),
-              for (final quality in VideoQuality.values)
-                _ChoiceTile(
-                  label: 'Qualité ${quality.label}',
-                  selected: settings.quality == quality,
-                  enabled: !settings.dataSaver,
-                  onTap: () =>
-                      ref.read(settingsProvider.notifier).setQuality(quality),
-                ),
-            ],
-          ),
-
-          // ---- Langue -------------------------------------------------
-          _Section(
-            title: 'Langue du contenu',
-            children: [
-              for (final language in ContentLanguage.values)
-                _ChoiceTile(
-                  label: language.label,
-                  selected: settings.language == language,
-                  onTap: () => ref
-                      .read(settingsProvider.notifier)
-                      .setLanguage(language),
-                ),
-            ],
-          ),
-
-          // ---- Réseau -------------------------------------------------
-          _Section(
-            title: 'Réseau',
-            children: [
-              ListTile(
-                leading: const Icon(Icons.network_check_rounded),
-                title: Text(
-                  connectivity.when(
-                    data: connectivityLabel,
-                    loading: () => 'Détection…',
-                    error: (_, __) => 'Inconnu',
-                  ),
-                  style: TamaText.body,
-                ),
-                subtitle:
-                    const Text('Réseau actuel', style: TamaText.bodyMuted),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: TamaSpacing.l),
-          Center(
-            child: Text(
-              '${TamaConstants.appName} 0.1.0 — MVP',
-              style: TamaText.label,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              TamaSpacing.l,
+              TamaSpacing.m,
+              TamaSpacing.l,
+              TamaSpacing.navBar,
             ),
+            children: [
+              const Text('RÉGLAGES', style: TamaText.titleXL),
+              const SizedBox(height: TamaSpacing.xl),
+
+              // ---- Compte -------------------------------------------------
+              _Section(
+                title: 'Compte',
+                children: [
+                  if (isDemo)
+                    const ListTile(
+                      leading: Icon(Icons.person_outline_rounded),
+                      title: Text('Mode démo', style: TamaText.body),
+                      subtitle: Text(
+                        'Supabase non configuré — comptes désactivés pour l\'instant.',
+                        style: TamaText.bodyMuted,
+                      ),
+                    )
+                  else if (user == null)
+                    ListTile(
+                      leading: const Icon(Icons.login_rounded),
+                      title: const Text(
+                        'Se connecter ou créer un compte',
+                        style: TamaText.body,
+                      ),
+                      subtitle: const Text(
+                        'Sauvegarde ta progression et tes favoris.',
+                        style: TamaText.bodyMuted,
+                      ),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => showAuthSheet(context),
+                    )
+                  else ...[
+                    ListTile(
+                      leading: const Icon(Icons.person_rounded),
+                      title: Text(user.email ?? 'Mon compte',
+                          style: TamaText.body),
+                      subtitle:
+                          const Text('Connecté', style: TamaText.bodyMuted),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.logout_rounded),
+                      title: const Text('Se déconnecter', style: TamaText.body),
+                      onTap: () async {
+                        await ref.read(supabaseClientProvider)?.auth.signOut();
+                        ref.read(progressVersionProvider.notifier).state++;
+                        ref.invalidate(favoriteIdsProvider);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('À bientôt.')),
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ],
+              ),
+
+              // ---- Lecture ------------------------------------------------
+              _Section(
+                title: 'Lecture',
+                children: [
+                  SwitchListTile(
+                    value: settings.dataSaver,
+                    onChanged: (v) =>
+                        ref.read(settingsProvider.notifier).setDataSaver(v),
+                    title: const Text(
+                      'Mode données réduites',
+                      style: TamaText.body,
+                    ),
+                    subtitle: const Text(
+                      '480p max et préchargement coupé — pensé pour la 3G.',
+                      style: TamaText.bodyMuted,
+                    ),
+                  ),
+                  for (final quality in VideoQuality.values)
+                    _ChoiceTile(
+                      label: 'Qualité ${quality.label}',
+                      selected: settings.quality == quality,
+                      enabled: !settings.dataSaver,
+                      onTap: () => ref
+                          .read(settingsProvider.notifier)
+                          .setQuality(quality),
+                    ),
+                ],
+              ),
+
+              // ---- Langue -------------------------------------------------
+              _Section(
+                title: 'Langue du contenu',
+                children: [
+                  for (final language in ContentLanguage.values)
+                    _ChoiceTile(
+                      label: language.label,
+                      selected: settings.language == language,
+                      onTap: () => ref
+                          .read(settingsProvider.notifier)
+                          .setLanguage(language),
+                    ),
+                ],
+              ),
+
+              // ---- Réseau -------------------------------------------------
+              _Section(
+                title: 'Réseau',
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.network_check_rounded),
+                    title: Text(
+                      connectivity.when(
+                        data: connectivityLabel,
+                        loading: () => 'Détection…',
+                        error: (_, __) => 'Inconnu',
+                      ),
+                      style: TamaText.body,
+                    ),
+                    subtitle:
+                        const Text('Réseau actuel', style: TamaText.bodyMuted),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: TamaSpacing.l),
+              Center(
+                child: Text(
+                  '${TamaConstants.appName} 0.1.0 — MVP',
+                  style: TamaText.label,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

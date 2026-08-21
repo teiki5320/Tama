@@ -71,7 +71,8 @@ class ErrorView extends StatelessWidget {
             ),
             if (onRetry != null) ...[
               const SizedBox(height: TamaSpacing.l),
-              OutlinedButton(onPressed: onRetry, child: const Text('Réessayer')),
+              OutlinedButton(
+                  onPressed: onRetry, child: const Text('Réessayer')),
             ],
           ],
         ),

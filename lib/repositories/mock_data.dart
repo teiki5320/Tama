@@ -22,8 +22,7 @@ const List<Series> mockSeries = [
   Series(
     id: 'demo-serie-2',
     title: 'Dakar Love',
-    synopsis:
-        'Entre deux mondes et deux promesses, Bineta doit choisir : '
+    synopsis: 'Entre deux mondes et deux promesses, Bineta doit choisir : '
         'le cœur ou le devoir.',
     genre: 'romance',
     language: 'fr',
@@ -34,8 +33,7 @@ const List<Series> mockSeries = [
   Series(
     id: 'demo-serie-3',
     title: 'Abidjan la nuit',
-    synopsis:
-        'Un chauffeur de taxi devient le témoin gênant d\'une affaire '
+    synopsis: 'Un chauffeur de taxi devient le témoin gênant d\'une affaire '
         'qui remonte très haut.',
     genre: 'thriller',
     language: 'fr',
@@ -46,8 +44,7 @@ const List<Series> mockSeries = [
   Series(
     id: 'demo-serie-4',
     title: 'La Dot',
-    synopsis:
-        'Pour épouser Aminata, Karim doit réunir une dot impossible — '
+    synopsis: 'Pour épouser Aminata, Karim doit réunir une dot impossible — '
         'et sa belle-famille ne va rien lui épargner.',
     genre: 'comédie',
     language: 'fr',
@@ -58,8 +55,7 @@ const List<Series> mockSeries = [
   Series(
     id: 'demo-serie-5',
     title: 'Trahison à Cocody',
-    synopsis:
-        'Le jour de son mariage, Adjoua apprend qui a réellement signé '
+    synopsis: 'Le jour de son mariage, Adjoua apprend qui a réellement signé '
         'la ruine de son père.',
     genre: 'vengeance',
     language: 'fr',
@@ -70,8 +66,7 @@ const List<Series> mockSeries = [
   Series(
     id: 'demo-serie-6',
     title: 'Cœur de Téranga',
-    synopsis:
-        'Un chef cuisinier de Saint-Louis remet en jeu son restaurant — '
+    synopsis: 'Un chef cuisinier de Saint-Louis remet en jeu son restaurant — '
         'et son premier amour.',
     genre: 'romance',
     language: 'wo',
@@ -82,8 +77,7 @@ const List<Series> mockSeries = [
   Series(
     id: 'demo-serie-7',
     title: 'Le Pacte de minuit',
-    synopsis:
-        'Trois étudiants de Yaoundé concluent un pacte qui va les '
+    synopsis: 'Trois étudiants de Yaoundé concluent un pacte qui va les '
         'dépasser, une nuit de coupure générale.',
     genre: 'thriller',
     language: 'fr',
@@ -94,8 +88,7 @@ const List<Series> mockSeries = [
   Series(
     id: 'demo-serie-8',
     title: 'Bienvenue au maquis',
-    synopsis:
-        'La petite gargote de Tantie Rosalie affronte l\'ouverture d\'un '
+    synopsis: 'La petite gargote de Tantie Rosalie affronte l\'ouverture d\'un '
         'fast-food climatisé juste en face.',
     genre: 'comédie',
     language: 'fr',

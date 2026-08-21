@@ -43,8 +43,7 @@ class SeriesCover extends StatelessWidget {
           : CachedNetworkImage(
               imageUrl: url,
               fit: BoxFit.cover,
-              placeholder: (_, __) =>
-                  _Poster(series: series, showTitle: false),
+              placeholder: (_, __) => _Poster(series: series, showTitle: false),
               errorWidget: (_, __, ___) => _Poster(
                 series: series,
                 showTitle: showTitle,

@@ -64,7 +64,8 @@ class _AuthSheetState extends ConsumerState<AuthSheet> {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Compte créé — vérifie ta boîte mail pour confirmer.'),
+            content:
+                Text('Compte créé — vérifie ta boîte mail pour confirmer.'),
           ),
         );
       } else {

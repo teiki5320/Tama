@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/async_view.dart';
 import '../../core/widgets/poster.dart';
@@ -60,7 +61,7 @@ class _SeriesDetail extends ConsumerWidget {
     return CustomScrollView(
       slivers: [
         SliverAppBar(
-          expandedHeight: 340,
+          expandedHeight: TamaLayout.coverHeight(context),
           pinned: true,
           backgroundColor: TamaColors.background,
           actions: [FavoriteButton(seriesId: series.id)],
@@ -91,30 +92,45 @@ class _SeriesDetail extends ConsumerWidget {
         SliverPadding(
           padding: const EdgeInsets.all(TamaSpacing.l),
           sliver: SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: TamaSpacing.s,
-                  runSpacing: TamaSpacing.s,
+            // Le bloc de tête ne s'étire pas sur un grand écran : lignes
+            // trop longues à lire, et un bouton large comme la fenêtre.
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: TamaLayout.readableWidth,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (series.genre != null)
-                      GenreChip(genre: series.genre!),
-                    _MetaChip(series.language.toUpperCase()),
-                    _MetaChip(series.isCompleted ? 'Terminée' : 'En cours'),
-                    _MetaChip('${series.totalEpisodes} épisodes'),
+                    Wrap(
+                      spacing: TamaSpacing.s,
+                      runSpacing: TamaSpacing.s,
+                      children: [
+                        if (series.genre != null)
+                          GenreChip(genre: series.genre!),
+                        _MetaChip(series.language.toUpperCase()),
+                        _MetaChip(series.isCompleted ? 'Terminée' : 'En cours'),
+                        _MetaChip('${series.totalEpisodes} épisodes'),
+                      ],
+                    ),
+                    const SizedBox(height: TamaSpacing.m),
+                    Text(
+                      series.title.toUpperCase(),
+                      style: TamaText.titleXL.copyWith(
+                        fontSize: TamaLayout.titleFontSize(context),
+                      ),
+                    ),
+                    if (series.synopsis != null) ...[
+                      const SizedBox(height: TamaSpacing.s),
+                      Text(series.synopsis!, style: TamaText.body),
+                    ],
+                    const SizedBox(height: TamaSpacing.l),
+                    _StartButton(series: series),
+                    const SizedBox(height: TamaSpacing.s),
                   ],
                 ),
-                const SizedBox(height: TamaSpacing.m),
-                Text(series.title.toUpperCase(), style: TamaText.titleXL),
-                if (series.synopsis != null) ...[
-                  const SizedBox(height: TamaSpacing.s),
-                  Text(series.synopsis!, style: TamaText.body),
-                ],
-                const SizedBox(height: TamaSpacing.l),
-                _StartButton(series: series),
-                const SizedBox(height: TamaSpacing.s),
-              ],
+              ),
             ),
           ),
         ),
@@ -147,9 +163,8 @@ class _SeriesDetail extends ConsumerWidget {
                     TamaSpacing.xxl,
                   ),
                   sliver: SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 5,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: TamaLayout.episodeColumns(context),
                       mainAxisSpacing: TamaSpacing.s,
                       crossAxisSpacing: TamaSpacing.s,
                     ),
@@ -206,9 +221,8 @@ class _StartButton extends ConsumerWidget {
         style: FilledButton.styleFrom(
           backgroundColor: TamaColors.forGenre(series.genre),
         ),
-        onPressed: target == null
-            ? null
-            : () => context.push('/watch/${target.id}'),
+        onPressed:
+            target == null ? null : () => context.push('/watch/${target.id}'),
         icon: const Icon(Icons.play_arrow_rounded),
         label: Text(label.toUpperCase()),
       ),
@@ -262,9 +276,8 @@ class _EpisodeCell extends StatelessWidget {
       onTap: () => context.push('/watch/${episode.id}'),
       child: Container(
         decoration: BoxDecoration(
-          color: completed
-              ? couleur.withValues(alpha: 0.22)
-              : TamaColors.surface,
+          color:
+              completed ? couleur.withValues(alpha: 0.22) : TamaColors.surface,
           border: inProgress ? Border.all(color: couleur, width: 2) : null,
         ),
         child: Stack(

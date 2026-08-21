@@ -169,6 +169,12 @@ impl. démo), `lib/providers`, `lib/features/<écran>`, `lib/services`
    favori. La progression anonyme vit en local et se synchronise à la
    connexion.
 6. **Commentaires en français**, identifiants en anglais.
+7. **Une série a toujours une affiche**, en trois temps : l'affiche déposée
+   (`cover_url`), sinon la vignette de son premier épisode — Bunny en génère
+   une par vidéo, verticale comme la vidéo — sinon l'affiche typographique.
+   Personne ne doit avoir à préparer une image ou recopier une adresse pour
+   qu'un catalogue tienne debout. La vue `v_series_cards` fournit
+   l'identifiant vidéo nécessaire sans requête supplémentaire.
 
 ## Variables d'environnement (--dart-define)
 
@@ -185,7 +191,8 @@ impl. démo), `lib/providers`, `lib/features/<écran>`, `lib/services`
 
 ## Backlog connu (phase suivante, sur demande uniquement)
 
-- Brancher le vrai backend (exécuter la migration dans Supabase, charger
-  covers 9:16 WebP et identifiants vidéo Bunny réels).
+- Brancher le vrai backend : exécuter la migration dans Supabase, poser les
+  clés dans les variables du processus Xcode Cloud, charger les identifiants
+  vidéo Bunny réels. Les affiches ne sont plus un prérequis (voir ci-dessous).
 - Icônes adaptatives Android, splash iOS avec logo.
 - Phase 2 (seulement si les métriques tiennent) : monétisation.

@@ -1,17 +1,24 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/series.dart';
+import '../../providers/repositories_providers.dart';
 import '../theme.dart';
 import 'poster.dart';
 
-/// Visuel d'une série. Sans cover, la vignette devient une **affiche
-/// typographique** : aplat dérivé de la couleur du genre, trame de
-/// sérigraphie, titre en Anton. L'absence de visuel devient un parti pris,
-/// et le jour où les vraies covers 9:16 arrivent elles prennent la place
-/// sans rien changer d'autre.
-class SeriesCover extends StatelessWidget {
+/// Visuel d'une série, en trois temps :
+///
+/// 1. l'affiche déposée, si le catalogue en porte une ;
+/// 2. sinon la vignette du premier épisode — Bunny en génère une par vidéo,
+///    au format de la vidéo, donc verticale et directement utilisable ;
+/// 3. sinon une **affiche typographique** : aplat dérivé de la couleur du
+///    genre, trame de sérigraphie, titre en Anton.
+///
+/// Le troisième cas n'est pas un trou : c'est un repli assumé, qui tient
+/// debout tant qu'une série n'a ni affiche ni vidéo en ligne.
+class SeriesCover extends ConsumerWidget {
   const SeriesCover({
     super.key,
     required this.series,
@@ -29,9 +36,10 @@ class SeriesCover extends StatelessWidget {
   final TextStyle? titleStyle;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final radius = borderRadius ?? BorderRadius.circular(TamaRadius.card);
-    final url = series.coverUrl;
+    // Affiche déposée si elle existe, sinon la vignette de la première vidéo.
+    final url = ref.read(bunnyServiceProvider).seriesCoverUrl(series);
     return ClipRRect(
       borderRadius: radius,
       child: url == null || url.isEmpty

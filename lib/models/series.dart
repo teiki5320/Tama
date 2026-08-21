@@ -10,6 +10,7 @@ class Series {
     this.totalEpisodes = 0,
     this.status = 'ongoing',
     this.sortOrder = 0,
+    this.coverVideoId,
   });
 
   final String id;
@@ -28,6 +29,11 @@ class Series {
   /// Classement manuel en accueil (plus bas = mis en avant).
   final int sortOrder;
 
+  /// Identifiant Bunny du premier épisode publié. Sert d'affiche de repli :
+  /// la vignette d'une vidéo verticale est déjà au bon format, et elle existe
+  /// dès la mise en ligne — aucune image à préparer.
+  final String? coverVideoId;
+
   bool get isCompleted => status == 'completed';
 
   factory Series.fromJson(Map<String, dynamic> json) => Series(
@@ -40,5 +46,6 @@ class Series {
         totalEpisodes: (json['total_episodes'] as num?)?.toInt() ?? 0,
         status: json['status'] as String? ?? 'ongoing',
         sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
+        coverVideoId: json['cover_video_id'] as String?,
       );
 }

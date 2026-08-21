@@ -13,6 +13,10 @@ abstract class SeriesRepository {
 
 /// Implémentation Supabase (production). Le filtre `is_published` est aussi
 /// garanti côté base par les policies RLS.
+///
+/// La lecture passe par la vue `v_series_cards` plutôt que par la table :
+/// elle ajoute l'identifiant vidéo du premier épisode, qui sert d'affiche de
+/// repli, sans requête supplémentaire depuis le téléphone.
 class SupabaseSeriesRepository implements SeriesRepository {
   SupabaseSeriesRepository(this._client);
 
@@ -21,7 +25,7 @@ class SupabaseSeriesRepository implements SeriesRepository {
   @override
   Future<List<Series>> fetchPublished() async {
     final rows = await _client
-        .from('series')
+        .from('v_series_cards')
         .select()
         .eq('is_published', true)
         .order('sort_order', ascending: true);
@@ -30,8 +34,11 @@ class SupabaseSeriesRepository implements SeriesRepository {
 
   @override
   Future<Series?> fetchById(String id) async {
-    final row =
-        await _client.from('series').select().eq('id', id).maybeSingle();
+    final row = await _client
+        .from('v_series_cards')
+        .select()
+        .eq('id', id)
+        .maybeSingle();
     return row == null ? null : Series.fromJson(row);
   }
 }

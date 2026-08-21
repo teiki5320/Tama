@@ -154,7 +154,41 @@ create index idx_analytics_series         on public.analytics_events (series_id)
 create index idx_analytics_created        on public.analytics_events (created_at);
 
 -- ============================================================================
--- 3. ROW LEVEL SECURITY
+-- 3. VUE DU CATALOGUE
+-- ============================================================================
+-- v_series_cards : les séries telles que l'app les affiche, augmentées de
+-- l'identifiant vidéo de leur premier épisode publié.
+--
+-- Pourquoi : sans affiche déposée, l'app se rabat sur la vignette que Bunny
+-- génère pour chaque vidéo. Comme les épisodes sont verticaux, cette vignette
+-- est déjà au format d'une affiche. Personne n'a d'image à préparer ni
+-- d'adresse à recopier — la mise en ligne de la vidéo suffit.
+--
+-- La vue évite une requête par série depuis le téléphone : l'accueil charge
+-- son catalogue en un seul appel, ce qui compte sur un réseau lent.
+--
+-- security_invoker = on : les policies RLS de `series` et `episodes`
+-- s'appliquent normalement, la vue n'ouvre aucun accès supplémentaire.
+-- ----------------------------------------------------------------------------
+create view public.v_series_cards
+with (security_invoker = on)
+as
+select
+  s.*,
+  (
+    select e.bunny_video_id
+    from public.episodes e
+    where e.series_id = s.id
+      and e.is_published
+    order by e.episode_number
+    limit 1
+  ) as cover_video_id
+from public.series s;
+
+grant select on public.v_series_cards to anon, authenticated;
+
+-- ============================================================================
+-- 4. ROW LEVEL SECURITY
 -- ============================================================================
 
 alter table public.series           enable row level security;
@@ -248,7 +282,7 @@ create policy "Analytics : insertion ouverte (y compris anonyme)"
   with check (user_id is null or user_id = auth.uid());
 
 -- ============================================================================
--- 4. VUE ANALYTICS — v_retention
+-- 5. VUE ANALYTICS — v_retention
 -- Par série et par numéro d'épisode :
 --   - starts            : nombre de démarrages (episode_start)
 --   - completions       : nombre de complétions (episode_complete)

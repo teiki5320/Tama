@@ -1,6 +1,7 @@
 import '../core/constants.dart';
 import '../core/env.dart';
 import '../models/episode.dart';
+import '../models/series.dart';
 
 /// Construit les URLs de lecture et de vignettes Bunny Stream.
 ///
@@ -46,6 +47,26 @@ class BunnyService {
       VideoQuality.p480 => mp4Url(episode.bunnyVideoId, 480),
       VideoQuality.p720 => mp4Url(episode.bunnyVideoId, 720),
     };
+  }
+
+  /// Affiche d'une série, par ordre de préférence : l'affiche déposée si
+  /// elle existe, sinon la vignette de son premier épisode. Bunny en génère
+  /// une pour chaque vidéo, au format de la vidéo — donc verticale, donc
+  /// utilisable telle quelle. Rien à préparer, rien à saisir.
+  ///
+  /// `null` déclenche l'affiche typographique, dernier recours.
+  String? seriesCoverUrl(Series series) {
+    final cover = series.coverUrl;
+    if (cover != null && cover.isNotEmpty) return cover;
+    final videoId = series.coverVideoId;
+    if (!Env.hasBunny ||
+        videoId == null ||
+        videoId.isEmpty ||
+        videoId == 'demo' ||
+        videoId.startsWith('BUNNY_ID')) {
+      return null;
+    }
+    return 'https://${Env.bunnyCdnHostname}/$videoId/thumbnail.jpg';
   }
 
   /// Vignette d'un épisode (celle stockée en base, sinon celle de Bunny).

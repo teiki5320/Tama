@@ -1,5 +1,35 @@
 # Tama sur TestFlight
 
+## Configuration en place (à reproduire à l'identique en cas de perte)
+
+Processus Xcode Cloud **« Tama TV »**, créé le 21 août 2026.
+
+| Réglage | Valeur |
+|---|---|
+| Produit Xcode Cloud | `tama` |
+| Dépôt principal | `https://github.com/teiki5320/Tama.git` |
+| Projet ou espace de travail | `ios/Runner.xcworkspace` |
+| Condition de démarrage | Modifications de branches · branche `main` · toute modification de fichier · annulation automatique activée |
+| Action | Archiver · plateforme iOS · schéma `Runner` · configuration Release |
+| Préparation de la distribution | **App Store Connect** |
+| Actions postérieures | aucune |
+| Environnement | Xcode « Latest Release » · macOS « Latest Release » |
+| Variables d'environnement | aucune (l'app tourne en mode démo) |
+
+⚠️ **Piège rencontré le 21 août 2026** : en créant ce processus depuis
+Xcode, l'assistant a rattaché Tama TV à un produit Xcode Cloud **déjà
+existant** (celui d'Erea) au lieu d'en créer un neuf. Résultat : les deux
+processus se sont retrouvés sous Tama TV, la page Xcode Cloud d'Erea s'est
+vidée, et les deux apps partagent le même compteur de builds (Erea 118 →
+Tama 119). Aucun build n'a été perdu, mais l'intégration continue d'Erea
+s'est arrêtée.
+
+**À vérifier impérativement pour toute nouvelle app** : à l'écran
+« Confirm App on App Store Connect », l'app affichée doit être celle qu'on
+configure. Et après création, contrôler que les autres apps ont toujours
+leurs propres processus.
+
+
 Méthode retenue : **Xcode Cloud**, comme les autres apps du studio.
 Aucune clé API, aucun secret dans le dépôt — Apple parle directement à
 GitHub.
@@ -44,7 +74,8 @@ open ios/Runner.xcworkspace
 Le `ios/Podfile` est produit par cette commande : **le committer** une
 fois généré, pour que la configuration des pods soit reproductible.
 
-Dans Xcode : menu **Product → Xcode Cloud → Create Workflow**, puis
+Dans Xcode : menu **Integrate → Create Workflow** (et non « Product », qui
+ne contient rien de tel), puis
 
 1. **Produit** : `Runner` → Next.
 2. **Dépôt** : connecter GitHub et autoriser l'accès à `teiki5320/Tama`.

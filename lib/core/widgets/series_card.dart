@@ -48,16 +48,92 @@ class SeriesCover extends ConsumerWidget {
               showTitle: showTitle,
               titleStyle: titleStyle,
             )
-          : CachedNetworkImage(
-              imageUrl: url,
-              fit: BoxFit.cover,
-              placeholder: (_, __) => _Poster(series: series, showTitle: false),
-              errorWidget: (_, __, ___) => _Poster(
-                series: series,
-                showTitle: showTitle,
-                titleStyle: titleStyle,
-              ),
+          : Stack(
+              fit: StackFit.expand,
+              children: [
+                CachedNetworkImage(
+                  imageUrl: url,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) =>
+                      _Poster(series: series, showTitle: false),
+                  errorWidget: (_, __, ___) => _Poster(
+                    series: series,
+                    showTitle: showTitle,
+                    titleStyle: titleStyle,
+                  ),
+                ),
+                // La trame passe aussi sur les images : c'est elle qui tient
+                // ensemble une vignette extraite d'une vidéo et une affiche
+                // typographique voisine dans le même rail.
+                const ScreenPrint(),
+                if (showTitle) ...[
+                  // Voile indispensable : sans lui, un titre crème posé sur
+                  // une vignette claire devient illisible. Il monte assez
+                  // haut pour couvrir trois lignes de titre.
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: [0.4, 0.78, 1],
+                        colors: [
+                          Colors.transparent,
+                          TamaColors.scrim,
+                          TamaColors.posterVeil,
+                        ],
+                      ),
+                    ),
+                  ),
+                  _PosterTitle(
+                    series: series,
+                    style: titleStyle,
+                    // Sur une image, la lettre est détourée : elle tient même
+                    // si un aplat clair remonte sous le voile.
+                    onImage: true,
+                  ),
+                ],
+              ],
             ),
+    );
+  }
+}
+
+/// Le titre, posé en bas de l'affiche.
+class _PosterTitle extends StatelessWidget {
+  const _PosterTitle({
+    required this.series,
+    this.style,
+    this.onImage = false,
+  });
+
+  final Series series;
+  final TextStyle? style;
+
+  /// Sur une image, le titre reçoit une ombre portée ; sur l'aplat
+  /// typographique, elle serait inutile et salirait la lettre.
+  final bool onImage;
+
+  @override
+  Widget build(BuildContext context) {
+    final base = style ?? TamaText.titleM;
+    return Align(
+      alignment: Alignment.bottomLeft,
+      child: Padding(
+        padding: const EdgeInsets.all(TamaSpacing.s),
+        child: Text(
+          series.title.toUpperCase(),
+          style: onImage
+              ? base.copyWith(
+                  shadows: const [
+                    Shadow(blurRadius: 10, color: TamaColors.background),
+                    Shadow(blurRadius: 3, color: TamaColors.background),
+                  ],
+                )
+              : base,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
     );
   }
 }
@@ -88,19 +164,7 @@ class _Poster extends StatelessWidget {
           ),
         ),
         const ScreenPrint(),
-        if (showTitle)
-          Align(
-            alignment: Alignment.bottomLeft,
-            child: Padding(
-              padding: const EdgeInsets.all(TamaSpacing.s),
-              child: Text(
-                series.title.toUpperCase(),
-                style: titleStyle ?? TamaText.titleM,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
+        if (showTitle) _PosterTitle(series: series, style: titleStyle),
       ],
     );
   }

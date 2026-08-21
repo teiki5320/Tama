@@ -45,6 +45,11 @@ abstract final class TamaColors {
   /// Voile sombre derrière les overlays du player.
   static const Color scrim = Color(0xC7140C0B);
 
+  /// Voile du bas des affiches. Plus dense que `scrim` : une vignette
+  /// extraite d'une vidéo peut être très claire, et le titre doit rester
+  /// lisible sans qu'on ait à choisir les images.
+  static const Color posterVeil = Color(0xF2140C0B);
+
   /// Piste inactive (barres de progression, séparateurs).
   static const Color track = Color(0x26FBF3E4);
 

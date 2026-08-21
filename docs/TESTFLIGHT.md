@@ -36,17 +36,29 @@ travail nommés `Runner`. L'assistant a reconnu « un projet Runner déjà
 connu » et réutilisé son produit, sans tenir compte de l'identifiant
 d'app pourtant différent.
 
-**La réparation**, appliquée le 21 août : Xcode → Integrate → Manage
-Workflows… → supprimer le processus « Tama TV ». Erea a aussitôt retrouvé
-son produit et sa page.
+**La réparation**, appliquée le 21 août, en trois temps :
+
+1. Supprimer le processus « Tama TV » du produit usurpateur. Nécessaire,
+   mais **insuffisant** : le produit restait rattaché à l'app Tama TV.
+2. Ouvrir `erea_flutter/ios/Runner.xcworkspace` dans Xcode, puis
+   Integrate → **Create Workflow…**, en confirmant **Erea** à l'écran
+   « Confirm App ». Xcode a alors créé un produit neuf, `erea`,
+   correctement rattaché — c'est cette étape qui a tout débloqué.
+3. Supprimer « Workflow erea », resté dans le produit `tama` : il aurait
+   compilé le code d'Erea sous l'app Tama TV.
+
+**État final** : Erea a son produit `erea` et son processus. Tama TV
+conserve le produit `tama` avec un processus « Tama TV » **cassé**
+(« Primary Repository Not Found », le dépôt de Tama n'ayant jamais été
+enregistré dans ce produit). Il ne peut rien déclencher.
 
 ### Avant de recréer ce processus
 
-Le build 119, vert, a été produit avant la suppression : Tama a déjà sa
-preuve que la chaîne fonctionne, et l'archivage depuis un Mac prend
-38 secondes. Rien ne presse.
+Le build 119, vert, a été produit avant tout cela : Tama a déjà la preuve
+que sa chaîne fonctionne, et l'archivage depuis un Mac prend 38 secondes.
+Rien ne presse.
 
-Quand on le recréera, **vérifier juste après que les pages Xcode Cloud
+Quand on s'y remettra, **vérifier juste après que les pages Xcode Cloud
 d'Erea, Train Cosy et Drama sont toujours garnies** — toutes trois sont
 en Flutter et exposées au même piège.
 

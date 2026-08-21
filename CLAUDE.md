@@ -56,8 +56,14 @@ en silence et l'archive échoue sur un exit 65 illisible.
   processus apparaissent sous la nouvelle app ; les numéros de build se
   suivent d'une app à l'autre (Erea 118 → Tama 119) ; le processus de la
   nouvelle app affiche « Primary Repository Not Found ».
-  **Réparation** : Xcode → Integrate → Manage Workflows… → supprimer le
-  processus de la NOUVELLE app. L'ancienne retrouve son produit.
+  **Réparation qui a fonctionné** (21/08/2026, dans cet ordre) :
+  1. supprimer le processus de la nouvelle app — nécessaire mais **pas
+     suffisant**, le produit reste rattaché à la mauvaise app ;
+  2. ouvrir le projet de l'app **volée** dans Xcode, Integrate → Create
+     Workflow…, et confirmer **son** app à l'écran « Confirm App ». Xcode
+     crée alors un produit neuf, correctement rattaché ;
+  3. supprimer l'ancien processus resté dans le produit usurpateur, sinon
+     il compilerait le code de l'app volée sous la mauvaise app.
   **Prévention** : après toute configuration Xcode Cloud, vérifier que les
   autres apps ont toujours leur propre page Xcode Cloud. Concerne aussi
   Train Cosy et Drama, également en Flutter.

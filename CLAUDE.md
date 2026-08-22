@@ -186,6 +186,7 @@ impl. démo), `lib/providers`, `lib/features/<écran>`, `lib/services`
 | Fichier | Contenu |
 |---|---|
 | `docs/TESTFLIGHT.md` | la procédure Xcode Cloud, pas à pas |
+| `docs/BUNNY.md` | la bibliothèque vidéo : identifiants, réglages, épisodes |
 | `supabase/migrations/` | le schéma, à coller dans Supabase |
 | `lib/core/theme.dart` | tous les jetons de design |
 

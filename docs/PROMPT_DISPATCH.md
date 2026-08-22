@@ -24,15 +24,17 @@ préserver, analytics d'abord, commentaires en français).
 2. Le mode démo fonctionne toujours (lancement sans --dart-define).
 3. Si l'UI change : captures d'écran des écrans touchés (390×844,
    build web) pour validation visuelle.
-4. Commit avec message clair en français, push sur la branche de travail
-   de la session, puis sur `main` une fois la tâche terminée.
+4. Commit avec message clair en français, poussé sur `main` — le studio
+   ne crée pas de branche. Grouper les commits quand c'est possible :
+   chaque poussée déclenche un build Xcode Cloud.
 5. Ne pas créer de pull request sauf demande explicite.
 
 ## Garde-fous
 
-- Ne pas toucher au schéma SQL sans le signaler explicitement : toute
-  modification de `supabase/migrations/` doit être livrée comme un
-  nouveau fichier de migration, jamais en éditant l'existante.
+- Le schéma SQL n'a jamais été appliqué sur le projet Supabase réel :
+  tant que c'est le cas, la migration initiale s'édite sur place. Le jour
+  où elle est exécutée, toute modification passe par un nouveau fichier
+  de migration — et il faudra corriger cette ligne.
 - Ne pas ajouter de dépendance sans la justifier en une ligne.
 - En cas de doute sur un choix produit, choisir l'option la plus simple
   et le signaler dans le résumé final plutôt que de bloquer.

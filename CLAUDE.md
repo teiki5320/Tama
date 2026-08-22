@@ -127,9 +127,11 @@ et vérifier qu'elles ont toujours la leur, avec le bon nom de produit.
 ## État actuel (ne pas refaire)
 
 - **Base Supabase** : migration complète dans `supabase/migrations/`
-  (6 tables, RLS testée, vue `v_retention`), seed de dev dans
-  `supabase/seed.sql`. Testée sur Postgres 16. **Pas encore appliquée sur
-  le projet Supabase réel.**
+  (6 tables, RLS testée, vues `v_series_cards` et `v_retention`), seed de
+  dev dans `supabase/seed.sql`. Testée sur Postgres 16. **Pas encore
+  appliquée sur le projet Supabase réel** — tant que c'est le cas, la
+  migration peut être éditée sur place ; après application, toute
+  modification passe par un nouveau fichier.
 - **App Flutter complète** : accueil (bannière, rail « Reprendre », rails
   par genre), fiche série, player vertical (swipe, préchargement du seul
   épisode suivant, enchaînement auto, reprise, sauvegarde 5 s), ma liste,
@@ -137,9 +139,21 @@ et vérifier qu'elles ont toujours la leur, avec le bon nom de produit.
 - **Mode démo intégré** : sans `--dart-define` Supabase, l'app tourne sur
   des données locales (`lib/repositories/mock_data.dart`). Toute nouvelle
   fonctionnalité DOIT continuer à fonctionner en mode démo.
-- **iOS prêt à archiver** : icônes (sans canal alpha), Team ID posé,
-  schéma `Runner` partagé, portrait uniquement, conformité export
-  déclarée, scripts Xcode Cloud en place.
+- **Design « affiche peinte »** : typographie d'enseigne (Anton), aplats
+  saturés, une couleur par genre, trame de sérigraphie, mouvement gratuit
+  en données (opacité, translation, échelle). Jetons dans
+  `lib/core/theme.dart`, composants dans `lib/core/widgets/poster.dart`.
+- **Mise en page adaptative** : trois paliers d'écran dans
+  `lib/core/layout.dart` (téléphone, tablette, grand écran). Un écran ne
+  fixe jamais ses propres dimensions.
+- **Bunny Stream configuré** : bibliothèque `Tama`, trois épisodes en
+  ligne et lisibles. Identifiants, réglages et pièges dans
+  `docs/BUNNY.md`. **Les clés ne sont pas encore transmises au build** :
+  l'app distribuée tourne donc en mode démo et ne mesure rien.
+- **iOS en service** : icônes (sans canal alpha), Team ID posé, schémas
+  `Runner` et `TamaTV` partagés, portrait uniquement, conformité export
+  déclarée, Xcode Cloud opérationnel — chaque poussée sur `main` produit
+  un build qui arrive dans TestFlight.
 
 ## Stack et architecture
 

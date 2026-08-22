@@ -15,7 +15,7 @@ et du taux de complétion.
 ```bash
 flutter pub get
 
-# Mode démo (aucun backend requis) : catalogue local de 8 séries,
+# Mode démo (aucun backend requis) : catalogue local de 6 séries,
 # progression et favoris pré-remplis, vidéo de démonstration.
 flutter run
 
@@ -30,15 +30,16 @@ flutter run \
 Sans `SUPABASE_URL`/`SUPABASE_ANON_KEY`, l'app bascule automatiquement en
 mode démo — pratique pour valider l'UX avant de brancher le backend.
 
-Distribution iOS : voir [docs/TESTFLIGHT.md](docs/TESTFLIGHT.md)
-(archivage Xcode, ou envoi automatisé via GitHub Actions sans Mac).
+Distribution iOS : **Xcode Cloud**, voir [docs/TESTFLIGHT.md](docs/TESTFLIGHT.md).
+Hébergement vidéo : **Bunny Stream**, voir [docs/BUNNY.md](docs/BUNNY.md).
 
 ### Structure
 
 ```
 lib/
   main.dart
-  core/          # theme.dart (jetons), constantes, env, client supabase, router
+  core/          # theme.dart (jetons), layout.dart (paliers d'écran),
+                 # widgets/ (affiches, trame, cascade), env, router
   models/        # series, episode, watch_progress
   repositories/  # accès données (impl. Supabase + impl. démo), une classe par table
   providers/     # riverpod (catalogue, progression, favoris, réglages, auth)
@@ -63,6 +64,14 @@ lib/
 - **Zéro friction** : lecture immédiate sans compte ; la progression
   anonyme vit en local et est synchronisée vers le compte à la connexion.
   L'auth n'est demandée qu'au premier favori.
+- **Affiches sans travail préalable** : une série affiche l'affiche
+  déposée si elle existe, sinon la vignette de son premier épisode — Bunny
+  en génère une par vidéo, verticale comme la vidéo — sinon une affiche
+  typographique dérivée du genre et du titre. La vue `v_series_cards`
+  fournit l'identifiant vidéo nécessaire sans requête supplémentaire.
+- **Mise en page adaptative** : trois paliers (téléphone, tablette, grand
+  écran) centralisés dans `core/layout.dart` ; aucun écran ne fixe ses
+  propres dimensions.
 - **Réseau dégradé** : HLS adaptatif via Bunny (qualité « Auto »),
   renditions MP4 forcées en 480p/720p, polices embarquées (aucun
   téléchargement au runtime), CanvasKit servi localement sur le web.
@@ -92,6 +101,10 @@ Ou via le CLI Supabase : `supabase db push`.
 | `watch_progress` | Position de lecture, PK `(user_id, episode_id)`, upsert | Propriétaire uniquement |
 | `favorites` | Séries favorites | Propriétaire uniquement |
 | `analytics_events` | Événements de tracking | Insertion ouverte (anonyme inclus), **lecture interdite** |
+
+La vue **`v_series_cards`** sert le catalogue à l'app : les colonnes de
+`series`, plus l'identifiant vidéo du premier épisode publié, qui sert
+d'affiche de repli. C'est elle que lit `SeriesRepository`, pas la table.
 
 La vue **`v_retention`** expose, par série et par numéro d'épisode : démarrages,
 complétions, taux de complétion (%) et seconde médiane de décrochage. Elle n'est

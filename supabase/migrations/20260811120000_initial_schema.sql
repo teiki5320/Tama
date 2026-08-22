@@ -1,7 +1,7 @@
 -- ============================================================================
 -- TAMA — Migration initiale
 -- Schéma complet : tables, contraintes, index, politiques RLS, triggers
--- et vue analytics `v_retention`.
+-- et vues analytiques `v_completion` et `v_retention`.
 --
 -- Utilisation : coller ce script tel quel dans l'éditeur SQL de Supabase
 -- (Dashboard > SQL Editor > New query > Run), ou l'appliquer via
@@ -50,6 +50,48 @@ create table public.episodes (
   -- Un seul épisode N par série
   unique (series_id, episode_number)
 );
+
+-- total_episodes est affiché tel quel sur la fiche série. Personne ne pense
+-- à le corriger en publiant un épisode de plus : la base le tient elle-même.
+-- Le compte ne retient que les épisodes publiés, comme l'app.
+create or replace function public.refresh_total_episodes()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  cibles uuid[];
+begin
+  -- Les branches sont explicites plutôt que condensées dans un CASE :
+  -- PL/pgSQL résout les variables référencées avant d'exécuter l'expression,
+  -- si bien qu'un `old.series_id` protégé par un CASE serait quand même lu
+  -- sur un INSERT — où OLD n'existe pas.
+  if tg_op = 'INSERT' then
+    cibles := array[new.series_id];
+  elsif tg_op = 'DELETE' then
+    cibles := array[old.series_id];
+  else
+    -- Un UPDATE peut déplacer un épisode d'une série à l'autre : les deux
+    -- compteurs sont alors à refaire.
+    cibles := array[old.series_id, new.series_id];
+  end if;
+
+  update public.series s
+  set total_episodes = (
+    select count(*)
+    from public.episodes e
+    where e.series_id = s.id
+      and e.is_published
+  )
+  where s.id = any (cibles);
+  return null;
+end;
+$$;
+
+create trigger episodes_refresh_total_episodes
+  after insert or update or delete on public.episodes
+  for each row execute function public.refresh_total_episodes();
 
 -- ----------------------------------------------------------------------------
 -- profiles : profil applicatif lié 1:1 à auth.users
@@ -148,10 +190,13 @@ create index idx_series_published_sort    on public.series (sort_order) where is
 create index idx_watch_progress_user_date on public.watch_progress (user_id, updated_at desc);
 create index idx_favorites_user_date      on public.favorites (user_id, created_at desc);
 
--- Requêtes analytics (vue v_retention et exports)
+-- Requêtes analytiques (vues v_completion / v_retention et exports)
 create index idx_analytics_event_episode  on public.analytics_events (event_name, episode_id);
 create index idx_analytics_series         on public.analytics_events (series_id);
 create index idx_analytics_created        on public.analytics_events (created_at);
+-- v_retention balaie les `app_open` par appareil et par jour.
+create index idx_analytics_open_device    on public.analytics_events (device_id, created_at)
+                                          where event_name = 'app_open';
 
 -- ============================================================================
 -- 3. VUE DU CATALOGUE
@@ -282,18 +327,26 @@ create policy "Analytics : insertion ouverte (y compris anonyme)"
   with check (user_id is null or user_id = auth.uid());
 
 -- ============================================================================
--- 5. VUE ANALYTICS — v_retention
--- Par série et par numéro d'épisode :
---   - starts            : nombre de démarrages (episode_start)
---   - completions       : nombre de complétions (episode_complete)
---   - completion_rate   : taux de complétion en %
---   - median_dropoff_s  : seconde médiane de décrochage (episode_dropoff)
+-- 5. VUES ANALYTIQUES
 --
--- security_invoker = on : la vue s'exécute avec les droits de l'appelant.
--- Combiné à l'absence de policy SELECT sur analytics_events et au REVOKE
--- ci-dessous, elle n'est consultable que depuis le Dashboard / service role.
+-- Le MVP mesure deux choses, et ce sont deux questions différentes :
+--   - `v_completion` : est-ce qu'on regarde un épisode jusqu'au bout ?
+--   - `v_retention`  : est-ce qu'on revient le lendemain ?
+--
+-- security_invoker = on sur les deux : elles s'exécutent avec les droits de
+-- l'appelant. Combiné à l'absence de policy SELECT sur analytics_events et
+-- aux REVOKE ci-dessous, elles ne sont consultables que depuis le Dashboard
+-- ou avec la service role key.
 -- ============================================================================
-create view public.v_retention
+
+-- ----------------------------------------------------------------------------
+-- v_completion — par série et par numéro d'épisode :
+--   - starts               : nombre de démarrages (episode_start)
+--   - completions          : nombre de complétions (episode_complete)
+--   - completion_rate_pct  : taux de complétion en %
+--   - median_dropoff_secs  : seconde médiane de décrochage (episode_dropoff)
+-- ----------------------------------------------------------------------------
+create view public.v_completion
 with (security_invoker = on)
 as
 select
@@ -321,5 +374,53 @@ where ev.event_name in ('episode_start', 'episode_complete', 'episode_dropoff')
 group by s.id, s.title, e.episode_number
 order by s.title, e.episode_number;
 
--- La vue ne doit jamais être lisible depuis l'app.
-revoke all on public.v_retention from anon, authenticated;
+-- ----------------------------------------------------------------------------
+-- v_retention — la vraie rétention, par cohorte de premier jour.
+--
+-- Un appareil (`device_id`, anonyme et persistant) compte une fois par jour,
+-- quel que soit le nombre d'ouvertures. Sa cohorte est le jour de sa
+-- première ouverture ; on regarde ensuite s'il est revenu à J+1 et à J+7.
+--
+-- `jours_ecoules` évite le contresens classique : une cohorte née hier
+-- affiche forcément 0 % à J+7, faute de temps — pas faute d'intérêt. Tant
+-- que `jours_ecoules` est inférieur à 7, la colonne J+7 ne veut rien dire.
+-- ----------------------------------------------------------------------------
+create view public.v_retention
+with (security_invoker = on)
+as
+with jours as (
+  select distinct
+    device_id,
+    (created_at at time zone 'UTC')::date as jour
+  from public.analytics_events
+  where event_name = 'app_open'
+),
+cohortes as (
+  select device_id, min(jour) as cohorte
+  from jours
+  group by device_id
+)
+select
+  c.cohorte,
+  current_date - c.cohorte          as jours_ecoules,
+  count(*)                          as nouveaux,
+  count(j1.device_id)               as revenus_j1,
+  count(j7.device_id)               as revenus_j7,
+  round(count(j1.device_id)::numeric / nullif(count(*), 0) * 100, 1)
+                                    as retention_j1_pct,
+  round(count(j7.device_id)::numeric / nullif(count(*), 0) * 100, 1)
+                                    as retention_j7_pct
+from cohortes c
+-- `jours` ne contient qu'une ligne par appareil et par date : ces deux
+-- jointures ne peuvent pas démultiplier les lignes, un appareil reste un
+-- appareil dans le décompte.
+left join jours j1
+  on j1.device_id = c.device_id and j1.jour = c.cohorte + 1
+left join jours j7
+  on j7.device_id = c.device_id and j7.jour = c.cohorte + 7
+group by c.cohorte
+order by c.cohorte desc;
+
+-- Ces vues ne doivent jamais être lisibles depuis l'app.
+revoke all on public.v_completion from anon, authenticated;
+revoke all on public.v_retention  from anon, authenticated;

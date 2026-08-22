@@ -68,18 +68,25 @@ class SeriesCover extends ConsumerWidget {
                 const ScreenPrint(),
                 if (showTitle) ...[
                   // Voile indispensable : sans lui, un titre crème posé sur
-                  // une vignette claire devient illisible. Il monte assez
-                  // haut pour couvrir trois lignes de titre.
+                  // une vignette claire devient illisible. Il descend assez
+                  // bas pour couvrir trois lignes de titre.
+                  //
+                  // En haut, et non en bas comme sur l'affiche typographique :
+                  // les sous-titres des épisodes sont incrustés dans l'image,
+                  // en bas, exactement là où le titre se posait. Deux textes
+                  // superposés, illisibles tous les deux. Le haut est libre —
+                  // seul le filigrane de la source y figure, que ce voile
+                  // atténue au passage.
                   const DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        stops: [0.4, 0.78, 1],
+                        stops: [0, 0.22, 0.6],
                         colors: [
-                          Colors.transparent,
-                          TamaColors.scrim,
                           TamaColors.posterVeil,
+                          TamaColors.scrim,
+                          Colors.transparent,
                         ],
                       ),
                     ),
@@ -98,7 +105,10 @@ class SeriesCover extends ConsumerWidget {
   }
 }
 
-/// Le titre, posé en bas de l'affiche.
+/// Le titre de la série, posé sur l'affiche.
+///
+/// En bas de l'affiche typographique, dont on maîtrise l'aplat ; en haut sur
+/// une vignette de vidéo, dont le bas porte les sous-titres incrustés.
 class _PosterTitle extends StatelessWidget {
   const _PosterTitle({
     required this.series,
@@ -109,15 +119,16 @@ class _PosterTitle extends StatelessWidget {
   final Series series;
   final TextStyle? style;
 
-  /// Sur une image, le titre reçoit une ombre portée ; sur l'aplat
-  /// typographique, elle serait inutile et salirait la lettre.
+  /// Sur une image, le titre monte en haut de l'affiche et reçoit une ombre
+  /// portée ; sur l'aplat typographique, il reste en bas et l'ombre serait
+  /// inutile — elle salirait la lettre.
   final bool onImage;
 
   @override
   Widget build(BuildContext context) {
     final base = style ?? TamaText.titleM;
     return Align(
-      alignment: Alignment.bottomLeft,
+      alignment: onImage ? Alignment.topLeft : Alignment.bottomLeft,
       child: Padding(
         padding: const EdgeInsets.all(TamaSpacing.s),
         child: Text(

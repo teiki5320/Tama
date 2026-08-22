@@ -156,7 +156,9 @@ class _EpisodePlayerPageState extends ConsumerState<EpisodePlayerPage> {
       // Sur le web, l'autoplay n'est autorisé que muet (politique navigateur).
       // La cible produit est mobile : le son y reste actif.
       if (kIsWeb) await controller.setVolume(0);
-      await controller.initialize();
+      // Le délai fait tomber l'attente sur le `catch` ci-dessous, qui affiche
+      // « Impossible de lire la vidéo » et un bouton Réessayer.
+      await controller.initialize().timeout(TamaConstants.videoInitTimeout);
       if (!mounted || _controller != controller) return;
       setState(() => _initFailed = false);
       if (widget.role == PageRole.active) {
@@ -177,12 +179,26 @@ class _EpisodePlayerPageState extends ConsumerState<EpisodePlayerPage> {
     if (controller == null || !controller.value.isInitialized) return;
 
     // Reprise : on repart de la position sauvegardée si elle est utile.
-    final saved = await _progressRepo.forEpisode(widget.episode.id);
+    //
+    // La progression est déjà en mémoire dès que l'accueil ou une fiche l'a
+    // chargée. La redemander au dépôt retarderait la première image d'un
+    // aller-retour réseau à chaque swipe, pour un utilisateur connecté. On
+    // ne retombe sur le dépôt que si elle n'a jamais été chargée — ouverture
+    // du player par un lien direct.
+    final chargee = ref.read(progressByEpisodeProvider).value;
+    final saved = chargee != null
+        ? chargee[widget.episode.id]
+        : await _progressRepo.forEpisode(widget.episode.id);
     if (!mounted || _controller != controller) return;
+
+    // La durée du contrôleur fait foi : `duration_seconds` peut valoir 0 en
+    // base quand personne ne l'a saisie, et la reprise serait alors
+    // silencieusement désactivée pour toute la série.
+    final dureeReelle = controller.value.duration.inSeconds;
     if (saved != null &&
         !saved.completed &&
         saved.positionSeconds > 2 &&
-        saved.positionSeconds < widget.episode.durationSeconds - 5) {
+        (dureeReelle <= 0 || saved.positionSeconds < dureeReelle - 5)) {
       await controller.seekTo(Duration(seconds: saved.positionSeconds));
     }
     await controller.play();
@@ -310,11 +326,14 @@ class _EpisodePlayerPageState extends ConsumerState<EpisodePlayerPage> {
   void _saveProgress({required bool completed}) {
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) return;
+    // Sur une complétion, on enregistre la durée réelle de la vidéo plutôt
+    // que celle du catalogue : la seconde peut être à 0 faute de saisie.
+    final dureeReelle = controller.value.duration.inSeconds;
     _progressRepo.save(
       WatchProgress(
         episodeId: widget.episode.id,
         positionSeconds: completed
-            ? widget.episode.durationSeconds
+            ? (dureeReelle > 0 ? dureeReelle : widget.episode.durationSeconds)
             : controller.value.position.inSeconds,
         completed: completed,
         updatedAt: DateTime.now(),

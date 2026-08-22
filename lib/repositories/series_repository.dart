@@ -9,6 +9,10 @@ abstract class SeriesRepository {
   Future<List<Series>> fetchPublished();
 
   Future<Series?> fetchById(String id);
+
+  /// Plusieurs séries publiées en un seul appel (voir
+  /// `EpisodeRepository.fetchByIds`). L'ordre n'est pas garanti.
+  Future<List<Series>> fetchByIds(List<String> ids);
 }
 
 /// Implémentation Supabase (production). Le filtre `is_published` est aussi
@@ -41,6 +45,17 @@ class SupabaseSeriesRepository implements SeriesRepository {
         .maybeSingle();
     return row == null ? null : Series.fromJson(row);
   }
+
+  @override
+  Future<List<Series>> fetchByIds(List<String> ids) async {
+    if (ids.isEmpty) return const [];
+    final rows = await _client
+        .from('v_series_cards')
+        .select()
+        .inFilter('id', ids)
+        .eq('is_published', true);
+    return rows.map(Series.fromJson).toList();
+  }
 }
 
 /// Implémentation de démonstration (aucun backend requis).
@@ -61,5 +76,16 @@ class MockSeriesRepository implements SeriesRepository {
       if (s.id == id) return s;
     }
     return null;
+  }
+
+  @override
+  Future<List<Series>> fetchByIds(List<String> ids) async {
+    if (ids.isEmpty) return const [];
+    await Future<void>.delayed(_latency);
+    final wanted = ids.toSet();
+    return [
+      for (final s in mockSeries)
+        if (wanted.contains(s.id)) s
+    ];
   }
 }

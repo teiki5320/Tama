@@ -19,6 +19,15 @@ abstract final class TamaConstants {
 
   /// Marge de fin : au-delà, l'épisode est considéré comme terminé.
   static const Duration completionEpsilon = Duration(milliseconds: 400);
+
+  /// Délai au-delà duquel on renonce à ouvrir une vidéo.
+  ///
+  /// `VideoPlayerController.initialize()` peut ne jamais rendre la main —
+  /// réseau qui ne répond plus, flux illisible par le décodeur — sans lever
+  /// la moindre erreur. Sans ce plafond, l'écran reste en chargement
+  /// indéfiniment : ni image, ni message, ni bouton. Généreux pour tenir en
+  /// 3G, mais fini.
+  static const Duration videoInitTimeout = Duration(seconds: 20);
 }
 
 /// Qualité vidéo choisie dans les réglages.

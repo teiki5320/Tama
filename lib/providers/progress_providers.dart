@@ -48,6 +48,15 @@ final watchHistoryProvider = FutureProvider<List<ContinueEntry>>(
   (ref) => _buildEntries(ref, includeCompleted: true, maxPerSeries: 3),
 );
 
+/// Nombre maximal de lignes affichées.
+const _maxEntries = 20;
+
+/// Nombre de progressions examinées. La liste locale peut en contenir 200 ;
+/// elle est triée du plus récent au plus ancien, et il en faut largement
+/// moins que ça pour remplir [_maxEntries] lignes. Ce plafond borne la
+/// taille des deux requêtes ci-dessous.
+const _lookupLimit = 60;
+
 Future<List<ContinueEntry>> _buildEntries(
   Ref ref, {
   required bool includeCompleted,
@@ -57,25 +66,41 @@ Future<List<ContinueEntry>> _buildEntries(
   final episodeRepo = ref.watch(episodeRepositoryProvider);
   final seriesRepo = ref.watch(seriesRepositoryProvider);
 
+  final candidats = [
+    for (final p in progresses)
+      if (includeCompleted || !p.completed) p
+  ].take(_lookupLimit).toList();
+  if (candidats.isEmpty) return const [];
+
+  // Deux requêtes en tout, quelle que soit la longueur de l'historique.
+  // Une par ligne — ce que faisait cette fonction — rendait l'accueil
+  // inutilisable en 3G dès que le catalogue grossissait.
+  final episodes = await episodeRepo.fetchByIds(
+    [for (final p in candidats) p.episodeId],
+  );
+  final episodeById = {for (final e in episodes) e.id: e};
+
+  final seriesList = await seriesRepo.fetchByIds(
+    {for (final e in episodes) e.seriesId}.toList(),
+  );
+  final seriesById = {for (final s in seriesList) s.id: s};
+
   final entries = <ContinueEntry>[];
   final perSeries = <String, int>{};
-  final seriesCache = <String, Series?>{};
 
-  for (final p in progresses) {
-    if (!includeCompleted && p.completed) continue;
-    final episode = await episodeRepo.fetchById(p.episodeId);
+  // L'ordre des progressions fait foi : la plus récente d'abord.
+  for (final p in candidats) {
+    final episode = episodeById[p.episodeId];
     if (episode == null) continue;
     final count = perSeries[episode.seriesId] ?? 0;
     if (count >= maxPerSeries) continue;
-    final series = seriesCache.putIfAbsent(episode.seriesId, () => null) ??
-        await seriesRepo.fetchById(episode.seriesId);
-    seriesCache[episode.seriesId] = series;
+    final series = seriesById[episode.seriesId];
     if (series == null) continue;
     perSeries[episode.seriesId] = count + 1;
     entries.add(
       ContinueEntry(series: series, episode: episode, progress: p),
     );
-    if (entries.length >= 20) break;
+    if (entries.length >= _maxEntries) break;
   }
   return entries;
 }

@@ -3,7 +3,8 @@
 Tama est une app mobile de streaming de micro-dramas verticaux (~1 min),
 spécialisée dans les dramas africains francophones, produite par le studio
 du propriétaire du dépôt. MVP sans monétisation : l'unique objectif est de
-mesurer la rétention et le taux de complétion (vue SQL `v_retention`).
+mesurer la rétention (vue SQL `v_retention`) et le taux de complétion
+(vue SQL `v_completion`).
 
 - Bundle ID : `com.teiki.tama` · Apple Team ID : `K597U7X3FZ`
 - Fiche App Store : **Tama TV** (le nom « Tama » était déjà pris ; sous
@@ -127,7 +128,8 @@ et vérifier qu'elles ont toujours la leur, avec le bon nom de produit.
 ## État actuel (ne pas refaire)
 
 - **Base Supabase** : migration complète dans `supabase/migrations/`
-  (6 tables, RLS testée, vues `v_series_cards` et `v_retention`), seed de
+  (6 tables, RLS testée, vues `v_series_cards`, `v_completion` et
+  `v_retention`), seed de
   dev dans `supabase/seed.sql`. Testée sur Postgres 16. **Pas encore
   appliquée sur le projet Supabase réel** — tant que c'est le cas, la
   migration peut être éditée sur place ; après application, toute

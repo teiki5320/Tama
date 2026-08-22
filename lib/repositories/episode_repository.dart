@@ -9,6 +9,11 @@ abstract class EpisodeRepository {
   Future<List<Episode>> fetchForSeries(String seriesId);
 
   Future<Episode?> fetchById(String id);
+
+  /// Plusieurs épisodes en un seul appel. Le rail « Reprendre » en a besoin :
+  /// une requête par ligne d'historique rendait l'accueil inutilisable sur un
+  /// réseau lent. L'ordre du résultat n'est pas garanti — l'appelant indexe.
+  Future<List<Episode>> fetchByIds(List<String> ids);
 }
 
 /// Implémentation Supabase (production).
@@ -34,6 +39,14 @@ class SupabaseEpisodeRepository implements EpisodeRepository {
         await _client.from('episodes').select().eq('id', id).maybeSingle();
     return row == null ? null : Episode.fromJson(row);
   }
+
+  @override
+  Future<List<Episode>> fetchByIds(List<String> ids) async {
+    if (ids.isEmpty) return const [];
+    final rows =
+        await _client.from('episodes').select().inFilter('id', ids);
+    return rows.map(Episode.fromJson).toList();
+  }
 }
 
 /// Implémentation de démonstration (aucun backend requis).
@@ -55,5 +68,17 @@ class MockEpisodeRepository implements EpisodeRepository {
       }
     }
     return null;
+  }
+
+  @override
+  Future<List<Episode>> fetchByIds(List<String> ids) async {
+    if (ids.isEmpty) return const [];
+    await Future<void>.delayed(_latency);
+    final wanted = ids.toSet();
+    return [
+      for (final episodes in mockEpisodes.values)
+        for (final e in episodes)
+          if (wanted.contains(e.id)) e
+    ];
   }
 }

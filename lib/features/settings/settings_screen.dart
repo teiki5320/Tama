@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants.dart';
 import '../../core/layout.dart';
+import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/favorites_providers.dart';
@@ -47,7 +48,23 @@ class SettingsScreen extends ConsumerWidget {
               _Section(
                 title: 'Compte',
                 children: [
-                  if (isDemo)
+                  if (supabaseStatus == SupabaseStatus.failed)
+                    // Des clés ont été fournies mais le backend n'a pas
+                    // répondu. Le dire ici évite la pire des enquêtes :
+                    // une app qui a l'air normale et ne mesure rien.
+                    const ListTile(
+                      leading: Icon(
+                        Icons.error_outline_rounded,
+                        color: TamaColors.error,
+                      ),
+                      title: Text('Backend injoignable', style: TamaText.body),
+                      subtitle: Text(
+                        'Les clés fournies n\'ont pas fonctionné. L\'app tourne '
+                        'sur ses données locales — signale-le au studio.',
+                        style: TamaText.bodyMuted,
+                      ),
+                    )
+                  else if (isDemo)
                     const ListTile(
                       leading: Icon(Icons.person_outline_rounded),
                       title: Text('Mode démo', style: TamaText.body),

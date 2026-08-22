@@ -34,6 +34,11 @@ class TamaApp extends ConsumerStatefulWidget {
 }
 
 class _TamaAppState extends ConsumerState<TamaApp> with WidgetsBindingObserver {
+  /// Vrai quand l'app est passée en arrière-plan depuis la dernière
+  /// ouverture. Sans ce drapeau, le `resumed` qui suit le lancement à froid
+  /// doublerait l'`app_open` déjà émis par `start()`.
+  bool _wasBackgrounded = false;
+
   @override
   void initState() {
     super.initState();
@@ -50,11 +55,25 @@ class _TamaAppState extends ConsumerState<TamaApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Mise en arrière-plan : on envoie immédiatement les événements en file
-    // plutôt que de risquer de les perdre.
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.detached) {
-      ref.read(analyticsServiceProvider).flush();
+    switch (state) {
+      // Mise en arrière-plan : on envoie immédiatement les événements en
+      // file plutôt que de risquer de les perdre.
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        _wasBackgrounded = true;
+        ref.read(analyticsServiceProvider).flush();
+      // Retour au premier plan. C'est CE moment qui mesure la rétention :
+      // sur iOS une app reste des jours en arrière-plan sans que son
+      // processus soit tué, et un testeur qui rouvre Tama chaque matin
+      // n'émettrait sinon qu'un seul `app_open`, le jour de l'installation.
+      case AppLifecycleState.resumed:
+        if (_wasBackgrounded) {
+          _wasBackgrounded = false;
+          ref.read(analyticsServiceProvider).track('app_open');
+        }
+      case AppLifecycleState.inactive:
+        break;
     }
   }
 

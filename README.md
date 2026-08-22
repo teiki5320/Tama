@@ -59,8 +59,8 @@ lib/
   en fin d'épisode, sauvegarde de progression toutes les 5 s et à la sortie.
 - **Analytics** : événements en file locale, envoyés par lots toutes les
   10 s dans `analytics_events` (insertion anonyme autorisée, lecture
-  interdite par RLS). `v_retention` agrège démarrages, complétions et
-  décrochages par épisode.
+  interdite par RLS). Deux vues les dépouillent : `v_completion` par
+  épisode, `v_retention` par cohorte d'appareils.
 - **Zéro friction** : lecture immédiate sans compte ; la progression
   anonyme vit en local et est synchronisée vers le compte à la connexion.
   L'auth n'est demandée qu'au premier favori.
@@ -106,12 +106,23 @@ La vue **`v_series_cards`** sert le catalogue à l'app : les colonnes de
 `series`, plus l'identifiant vidéo du premier épisode publié, qui sert
 d'affiche de repli. C'est elle que lit `SeriesRepository`, pas la table.
 
-La vue **`v_retention`** expose, par série et par numéro d'épisode : démarrages,
-complétions, taux de complétion (%) et seconde médiane de décrochage. Elle n'est
-lisible que depuis le Dashboard / service role, jamais depuis l'app. C'est le
-tableau de bord hebdomadaire du MVP :
+Le MVP mesure deux choses, et ce sont deux questions distinctes — d'où deux
+vues. Ni l'une ni l'autre n'est lisible depuis l'app : Dashboard ou service
+role uniquement. Ensemble, elles forment le tableau de bord hebdomadaire.
+
+La vue **`v_completion`** répond à « regarde-t-on l'épisode jusqu'au bout ? ».
+Par série et par numéro d'épisode : démarrages, complétions, taux de
+complétion (%) et seconde médiane de décrochage.
+
+La vue **`v_retention`** répond à « revient-on le lendemain ? ». Par cohorte
+de premier jour : appareils nouveaux, revenus à J+1 et à J+7, et les deux
+taux correspondants. Un appareil compte une fois par jour, quel que soit son
+nombre d'ouvertures. La colonne `jours_ecoules` dit depuis combien de temps
+la cohorte existe : tant qu'elle est inférieure à 7, la colonne J+7 ne veut
+rien dire — une cohorte née hier ne peut pas être revenue dans une semaine.
 
 ```sql
+select * from v_completion;
 select * from v_retention;
 ```
 

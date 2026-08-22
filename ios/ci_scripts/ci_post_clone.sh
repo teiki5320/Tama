@@ -34,6 +34,12 @@ echo "ℹ️  CI_PRIMARY_REPOSITORY_PATH = $CI_PRIMARY_REPOSITORY_PATH"
 echo "ℹ️  PROJECT_DIR                = $PROJECT_DIR"
 xcodebuild -version
 
+# Liste des --dart-define et vérification des clés, partagées avec
+# ci_pre_xcodebuild.sh. Contrôlées ici, avant dix minutes de téléchargement
+# de SDK : un build sans clés livrerait une app en mode démo.
+. "$PROJECT_DIR/ios/ci_scripts/tama_env.sh"
+tama_require_env
+
 # Clone du SDK, idempotent : les runners Xcode Cloud peuvent être réutilisés.
 if [ ! -d "$FLUTTER_DIR" ]; then
   echo "📥 Installation de Flutter stable dans $FLUTTER_DIR"
@@ -65,15 +71,9 @@ retry flutter pub get
 # Écrit toute la configuration Xcode du mode Release (Generated.xcconfig
 # complet, flutter_export_environment.sh) sans compiler : l'archive de
 # Xcode Cloud échoue en quelques secondes (exit 65) si cette étape manque.
-#
-# --build-number : sans lui, tous les builds porteraient le numéro 1 et
-# App Store Connect refuserait les envois suivants comme doublons.
+# C'est aussi cette étape qui grave les --dart-define dans Generated.xcconfig.
 echo "📦 flutter build ios --config-only"
-flutter build ios \
-  --release \
-  --config-only \
-  --no-codesign \
-  --build-number="${CI_BUILD_NUMBER:-1}"
+tama_flutter_config_only
 
 # Garde-fou : sans Generated.xcconfig, le Podfile lève une exception et les
 # phases de build « Run Script » / « Thin Binary » de Runner échouent avec
@@ -84,7 +84,16 @@ if [ ! -f "$GENERATED" ]; then
   exit 1
 fi
 echo "✅ Generated.xcconfig produit :"
-cat "$GENERATED"
+# DART_DEFINES porte la clé anonyme Supabase, encodée en base64 : lisible dans
+# le log, donc écartée de l'affichage. Sa présence suffit à vérifier.
+# `|| true` : sous set -e, un grep qui ne sélectionne rien arrête le script.
+grep -v '^DART_DEFINES=' "$GENERATED" || true
+if grep -q '^DART_DEFINES=' "$GENERATED"; then
+  echo "DART_DEFINES=… (masqué)"
+else
+  echo "❌ Aucun DART_DEFINES dans $GENERATED" >&2
+  exit 1
+fi
 
 echo "📦 pod install"
 if ! command -v pod > /dev/null 2>&1; then

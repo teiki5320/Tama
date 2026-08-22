@@ -55,15 +55,20 @@ Durées : 1 min 13 à 1 min 17. Fichiers sources de 240 à 270 Mo.
 ## Deux constats sur ces vidéos
 
 - **Les sous-titres sont incrustés dans l'image**, en bas — là où l'app
-  pose le titre de la série sur une affiche. Les deux se superposent. À
-  trancher : titre en haut sur les affiches issues d'une vignette, ou
-  vignette choisie sur un instant sans dialogue.
+  posait le titre de la série sur une affiche. **Tranché le 22/08/2026 :
+  sur une affiche issue d'une vignette, le titre passe en haut**, voile
+  compris ; l'affiche typographique, dont on maîtrise l'aplat, garde le
+  sien en bas. Aucune vignette à choisir, aucune vidéo à ré-encoder.
 - **Un filigrane `toa.afrotok`** figure en haut à droite. Rien ne peut le
-  retirer côté app : c'est à régler à la source.
+  retirer côté app : c'est à régler à la source. Le voile du titre
+  l'assombrit au passage, sans le faire disparaître.
 
 ## Ce qui manque pour brancher le catalogue
 
 1. Le titre de la série, son genre et son synopsis.
-2. La migration exécutée sur le projet Supabase réel.
-3. Les clés Supabase posées dans les variables du processus Xcode Cloud,
-   et transmises par `ci_post_clone.sh` à `flutter build`.
+2. La migration exécutée sur le projet Supabase réel, puis la série et ses
+   trois épisodes insérés.
+3. ~~Les clés Supabase transmises par les scripts Xcode Cloud à
+   `flutter build`~~ — fait le 22/08/2026, voir `ios/ci_scripts/tama_env.sh`.
+   Restent les deux variables à saisir dans le processus Xcode Cloud
+   (`docs/TESTFLIGHT.md`).

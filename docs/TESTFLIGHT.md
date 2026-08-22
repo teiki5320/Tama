@@ -14,7 +14,7 @@ Processus Xcode Cloud **« Tama TV »**, créé le 21 août 2026.
 | Préparation de la distribution | **App Store Connect** |
 | Actions postérieures | aucune |
 | Environnement | Xcode « Latest Release » · macOS « Latest Release » |
-| Variables d'environnement | aucune (l'app tourne en mode démo) |
+| Variables d'environnement | `SUPABASE_URL`, `SUPABASE_ANON_KEY` (voir plus bas) |
 
 **État au 21 août 2026 : en service.** Chaque poussée sur `main` déclenche
 un build, qui arrive dans TestFlight. Le tableau ci-dessus est la
@@ -206,21 +206,34 @@ App Store Connect → Tama TV → **TestFlight** → **Testeurs internes**
 
 ## Variables d'environnement
 
-Le build par défaut tourne en **mode démo** : catalogue local, vidéo de
-démonstration, aucun backend requis. C'est voulu pour les premiers essais.
+Deux variables à saisir, et deux seulement :
 
-Pour brancher le vrai backend, ajouter les variables dans les réglages du
-workflow Xcode Cloud (Environnement → Variables), puis les passer au build
-en ajoutant à la fin du script d'amorçage :
+| Nom | Valeur | Secret |
+|---|---|---|
+| `SUPABASE_URL` | `https://<projet>.supabase.co` | non |
+| `SUPABASE_ANON_KEY` | la clé `anon` / `publishable` du projet | **oui** |
 
-```sh
---dart-define=SUPABASE_URL="$SUPABASE_URL" \
---dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
---dart-define=BUNNY_STREAM_LIBRARY_ID="$BUNNY_STREAM_LIBRARY_ID" \
---dart-define=BUNNY_STREAM_CDN_HOSTNAME="$BUNNY_STREAM_CDN_HOSTNAME"
-```
+App Store Connect → **Xcode Cloud** → Gérer les processus → le processus de
+Tama → **Environnement** → Variables d'environnement.
 
-Cocher **Secret** pour les valeurs sensibles.
+Les valeurs Bunny (`BUNNY_STREAM_LIBRARY_ID`,
+`BUNNY_STREAM_CDN_HOSTNAME`) n'ont pas à être saisies : elles ne sont pas
+secrètes — elles figurent dans les URLs que l'app appelle — et
+`ios/ci_scripts/tama_env.sh` les porte en clair, avec les valeurs de
+`docs/BUNNY.md`. Une variable du même nom les remplace le jour où la
+bibliothèque change.
+
+`tama_env.sh` est le seul endroit où la liste des `--dart-define` est
+écrite ; `ci_post_clone.sh` et `ci_pre_xcodebuild.sh` la partagent. C'est
+`flutter build ios --config-only` qui grave ces valeurs dans
+`ios/Flutter/Generated.xcconfig`, et l'archive qui les y relit.
+
+⚠️ **Sans ces deux variables, le build échoue** — dès le post-clone, avec
+un message explicite. C'est délibéré : une app sans clés compile
+parfaitement et arrive dans TestFlight en mode démo, sur des données
+locales, sans rien mesurer. Une panne muette de ce genre a déjà coûté une
+livraison entière. Il vaut mieux un build rouge qu'un build vert qui ne
+mesure rien.
 
 ## Chemins alternatifs
 

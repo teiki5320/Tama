@@ -15,6 +15,10 @@ set -e
 PROJECT_DIR="$CI_PRIMARY_REPOSITORY_PATH"
 GENERATED="$PROJECT_DIR/ios/Flutter/Generated.xcconfig"
 
+# Mêmes --dart-define qu'au post-clone : une régénération qui les oublierait
+# livrerait une app en mode démo, sans qu'aucune étape n'échoue.
+. "$PROJECT_DIR/ios/ci_scripts/tama_env.sh"
+
 echo "🔎 Vérification de la configuration Flutter avant xcodebuild"
 echo "ℹ️  HOME = $HOME"
 
@@ -34,15 +38,22 @@ fi
 
 if [ "$NEEDS_REGEN" = "1" ]; then
   echo "🔧 Régénération de la configuration Flutter"
+  tama_require_env
   export PATH="$HOME/flutter/bin:$PATH"
   cd "$PROJECT_DIR"
   flutter pub get
-  flutter build ios \
-    --release \
-    --config-only \
-    --no-codesign \
-    --build-number="${CI_BUILD_NUMBER:-1}"
-  cat "$GENERATED"
+  tama_flutter_config_only
+  grep -v '^DART_DEFINES=' "$GENERATED" || true
 else
   echo "✅ Configuration Flutter cohérente"
 fi
+
+# Dernier verrou avant l'archive : c'est ce fichier, et lui seul, que
+# xcode_backend.sh relira pour compiler le Dart. Sans DART_DEFINES, l'app
+# livrée serait la démo.
+if ! grep -q '^DART_DEFINES=' "$GENERATED"; then
+  echo "❌ Generated.xcconfig ne porte aucun DART_DEFINES : l'app partirait" >&2
+  echo "   en mode démo, sans Supabase ni Bunny." >&2
+  exit 1
+fi
+echo "✅ DART_DEFINES présent"

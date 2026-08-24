@@ -127,13 +127,16 @@ et vérifier qu'elles ont toujours la leur, avec le bon nom de produit.
 
 ## État actuel (ne pas refaire)
 
-- **Base Supabase** : migration complète dans `supabase/migrations/`
-  (6 tables, RLS testée, vues `v_series_cards`, `v_completion` et
-  `v_retention`), seed de
-  dev dans `supabase/seed.sql`. Testée sur Postgres 16. **Pas encore
-  appliquée sur le projet Supabase réel** — tant que c'est le cas, la
-  migration peut être éditée sur place ; après application, toute
-  modification passe par un nouveau fichier.
+- **Base Supabase en service** : projet `Tama`
+  (`cxrzxdwapwqklrskqcjb`, Central EU Frankfurt), lié au dépôt par
+  `supabase link`. Les deux migrations de `supabase/migrations/` y sont
+  appliquées : le schéma (6 tables, RLS, vues `v_series_cards`,
+  `v_completion` et `v_retention`) et le premier catalogue — « La femme
+  aux poulets », trois épisodes publiés. Vérifié depuis l'API avec la clé
+  anon : le catalogue répond, les deux vues analytiques refusent l'accès.
+  ⚠️ **Le schéma est posé : plus aucune migration ne s'édite sur place.**
+  Toute évolution passe par `supabase migration new`, puis
+  `supabase db push`. Seed de dev dans `supabase/seed.sql`.
 - **App Flutter complète** : accueil (bannière, rail « Reprendre », rails
   par genre), fiche série, player vertical (swipe, préchargement du seul
   épisode suivant, enchaînement auto, reprise, sauvegarde 5 s), ma liste,
@@ -208,8 +211,10 @@ impl. démo), `lib/providers`, `lib/features/<écran>`, `lib/services`
 
 ## Backlog connu (phase suivante, sur demande uniquement)
 
-- Brancher le vrai backend : exécuter la migration dans Supabase, poser les
-  clés dans les variables du processus Xcode Cloud, charger les identifiants
-  vidéo Bunny réels. Les affiches ne sont plus un prérequis (voir ci-dessous).
+- Poser les quatre variables dans le processus Xcode Cloud
+  (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `BUNNY_STREAM_LIBRARY_ID`,
+  `BUNNY_STREAM_CDN_HOSTNAME`). C'est le dernier maillon : la base et le
+  catalogue sont en place, mais sans ces clés l'app distribuée reste en
+  mode démo et ne mesure toujours rien.
 - Icônes adaptatives Android, splash iOS avec logo.
 - Phase 2 (seulement si les métriques tiennent) : monétisation.

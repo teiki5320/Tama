@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(supabase db push:*)",
+      "Bash(supabase db pull:*)",
+      "Bash(supabase db diff:*)",
+      "Bash(supabase migration list:*)",
+      "Bash(supabase migration new:*)",
+      "Bash(supabase migration repair:*)",
+      "Bash(supabase migration up:*)",
+      "Bash(supabase inspect:*)",
+      "Bash(supabase link:*)",
+      "Bash(supabase projects list:*)",
+      "Bash(supabase status:*)"
+    ],
+    "deny": [
+      "Bash(supabase db reset:*)",
+      "Bash(supabase projects delete:*)",
+      "Bash(supabase projects api-keys:*)"
+    ]
+  }
+}

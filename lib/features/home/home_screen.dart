@@ -40,7 +40,9 @@ class HomeScreen extends ConsumerWidget {
             subtitle: 'Les premières séries seront bientôt là. Reviens vite !',
           ),
           builder: (seriesList) {
-            final rails = ref.watch(genreRailsProvider).value ??
+            // valueOrNull, et non value : sur un AsyncError, `value` relance
+            // l'exception et le bloc devient un rectangle gris en release.
+            final rails = ref.watch(genreRailsProvider).valueOrNull ??
                 const <String, List<Series>>{};
             var rank = 0;
             return ListView(
@@ -221,8 +223,10 @@ class _ContinueRail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final entries =
-        ref.watch(continueWatchingProvider).value ?? const <ContinueEntry>[];
+    // valueOrNull : si la progression ne peut pas être résolue, le rail
+    // s'efface au lieu de faire tomber tout l'accueil.
+    final entries = ref.watch(continueWatchingProvider).valueOrNull ??
+        const <ContinueEntry>[];
     if (entries.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

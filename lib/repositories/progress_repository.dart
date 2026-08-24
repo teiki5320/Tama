@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/ids.dart';
 import '../models/watch_progress.dart';
 import 'mock_data.dart';
 
@@ -81,7 +82,9 @@ class ProgressRepository {
   Future<void> syncLocalToRemote() async {
     if (!_isLoggedIn) return;
     final userId = _client!.auth.currentUser!.id;
-    final local = _readLocal();
+    // Une seule entrée héritée du mode démo ferait rejeter tout le lot :
+    // l'utilisateur perdrait sa vraie progression en se connectant.
+    final local = _readLocal().where((p) => isUuid(p.episodeId)).toList();
     if (local.isEmpty) return;
     try {
       await _client.from('watch_progress').upsert([

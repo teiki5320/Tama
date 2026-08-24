@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/ids.dart';
 import '../models/episode.dart';
 import 'mock_data.dart';
 
@@ -42,9 +43,12 @@ class SupabaseEpisodeRepository implements EpisodeRepository {
 
   @override
   Future<List<Episode>> fetchByIds(List<String> ids) async {
-    if (ids.isEmpty) return const [];
+    // Les identifiants hérités du mode démo ne sont pas des uuid : les
+    // laisser passer ferait échouer la requête entière (cf. core/ids.dart).
+    final valides = ids.where(isUuid).toList();
+    if (valides.isEmpty) return const [];
     final rows =
-        await _client.from('episodes').select().inFilter('id', ids);
+        await _client.from('episodes').select().inFilter('id', valides);
     return rows.map(Episode.fromJson).toList();
   }
 }

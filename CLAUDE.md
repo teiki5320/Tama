@@ -117,6 +117,27 @@ et vérifier qu'elles ont toujours la leur, avec le bon nom de produit.
   l'activent par défaut, podhelper saute alors les plugins compatibles et
   l'archive casse sur « Module 'shared_preferences_foundation' not found ».
   `ci_post_clone.sh` force le mode CocoaPods, ne pas retirer cette ligne.
+- ⚠️ **En release, un widget qui lève une exception devient un rectangle
+  gris.** Pas d'écran rouge comme en debug, pas de message : un aplat muet
+  à la place du bloc fautif, et le reste de l'écran continue de s'afficher
+  normalement. Un gris inexpliqué dans l'app se lit donc « une exception a
+  été levée ici » — c'est le premier réflexe à avoir, avant de chercher un
+  problème de mise en page. Corollaire : `AsyncValue.value` **relance**
+  l'erreur d'un `AsyncError` ; le `?? valeurParDéfaut` qui suit ne protège
+  que du `null`. Toujours `valueOrNull` quand l'écran doit survivre à un
+  provider en échec.
+- ⚠️ **Le passage du mode démo au vrai backend laisse des données
+  incompatibles sur l'appareil.** La progression anonyme vit en local et
+  survit à la mise à jour : un téléphone qui a connu le mode démo garde
+  des identifiants comme « demo-serie-1-ep3 », qui ne sont pas des `uuid`.
+  Envoyés dans un `in.(…)` sur une colonne `uuid`, ils font rejeter la
+  requête **entière** par Postgres — une seule ligne héritée suffit à faire
+  tomber tout un rail. Le 24/08/2026, ça a grisé la moitié de l'accueil de
+  tous les testeurs déjà équipés, alors qu'une installation neuve
+  fonctionnait parfaitement. Les dépôts Supabase filtrent désormais par
+  `isUuid` (`lib/core/ids.dart`). **À reproduire pour tout nouvel
+  identifiant** : ni les tests ni une installation propre ne voient ce
+  genre de panne.
 - **Les mots-clés App Store se comptent en octets**, pas en caractères :
   chaque accent en vaut deux.
 - **Flutter ne descend pas dans les sous-dossiers d'assets** : chaque

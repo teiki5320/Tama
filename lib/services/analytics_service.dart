@@ -98,7 +98,14 @@ class AnalyticsService {
       // .insert() SANS .select() : la lecture de la table est interdite
       // par RLS, PostgREST ne doit donc rien tenter de retourner.
       await _client.from('analytics_events').insert(batch);
-    } catch (_) {
+    } catch (e) {
+      // Un envoi qui échoue en silence rend toute panne de mesure
+      // indiagnosticable : le 26/08/2026, des `episode_complete` ont
+      // disparu sans laisser la moindre trace. L'erreur est donc écrite,
+      // avec les événements du lot — PostgREST rejette le lot entier dès
+      // qu'une seule ligne est invalide.
+      debugPrint('[analytics] envoi échoué (${batch.length} événement(s) : '
+          '${batch.map((m) => m['event_name']).join(', ')}) : $e');
       // Échec réseau : on remet le lot en tête de file pour le prochain tick.
       _queue.insertAll(0, batch.take(_queueLimit - _queue.length));
     } finally {

@@ -65,7 +65,16 @@ l'app**. Aucun produit ne portant ce nom, App Store Connect en crée un
 neuf : plus rien à voler.
 
 Tama a le sien : `TamaTV`, dans
-`ios/Runner.xcodeproj/xcshareddata/xcschemes/`.
+`ios/Runner.xcodeproj/xcshareddata/xcschemes/`, **et son processus
+Xcode Cloud archive bien avec celui-là** depuis le 26/08/2026.
+
+Le basculement de `Runner` vers `TamaTV` s'est fait depuis App Store
+Connect, sur le processus existant — jamais par « Créer un processus ».
+Il n'a rien cassé, et c'est utile de savoir pourquoi : changer le schéma
+d'un processus déjà en place ne le déplace pas de produit. Le compteur de
+builds a suivi sa propre suite (129 → 130 → 131, le 131 vert avec
+`TamaTV`), et la page Xcode Cloud d'Erea a gardé son processus « Erea »
+intact. Ce sont les deux vérifications à refaire à chaque fois.
 
 **Sur une app dont le produit fonctionne déjà** (Erea) : ne plus jamais
 lancer Create Workflow… depuis Xcode. Tout se règle depuis App Store
@@ -103,7 +112,7 @@ et vérifier qu'elles ont toujours la leur, avec le bon nom de produit.
      du *prochain* build : il doit être **supérieur** au dernier existant
      (Erea était à 118 → réglé sur 119).
   **Prévention** : voir « Ranger les apps Flutter dans Xcode Cloud »
-  ci-dessous — à appliquer avant de configurer Train Cosy et Drama.
+  ci-dessus — à appliquer avant de configurer Train Cosy et Drama.
 - **Xcode Cloud, action *Archiver*** : la préparation de la distribution
   doit rester sur **« App Store Connect »**. Sur « TestFlight (tests
   internes uniquement) », les builds n'apparaissent jamais dans la liste

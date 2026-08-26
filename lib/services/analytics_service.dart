@@ -35,6 +35,12 @@ class AnalyticsService {
   /// Identifiant anonyme et persistant de l'appareil.
   late final String deviceId = _loadDeviceId();
 
+  /// Nombre d'événements en attente d'envoi. Seul point d'observation de la
+  /// file, qui reste privée : sans lui, la mise en file et le vidage ne
+  /// seraient vérifiables qu'en lançant l'app.
+  @visibleForTesting
+  int get pendingCount => _queue.length;
+
   String _loadDeviceId() {
     var id = _prefs.getString(_deviceIdKey);
     if (id == null || id.isEmpty) {

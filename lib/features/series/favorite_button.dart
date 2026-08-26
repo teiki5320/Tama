@@ -15,8 +15,11 @@ class FavoriteButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // valueOrNull : `value` relance l'erreur d'un AsyncError et le bouton
+    // deviendrait un rectangle gris en release. Sans favoris connus, il
+    // s'affiche simplement comme « pas en favori ».
     final favoriteIds =
-        ref.watch(favoriteIdsProvider).value ?? const <String>{};
+        ref.watch(favoriteIdsProvider).valueOrNull ?? const <String>{};
     final isFavorite = favoriteIds.contains(seriesId);
     return IconButton(
       tooltip: isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris',

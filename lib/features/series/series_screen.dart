@@ -55,7 +55,9 @@ class _SeriesDetail extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final episodesAsync = ref.watch(episodesProvider(series.id));
-    final progressMap = ref.watch(progressByEpisodeProvider).value ??
+    // valueOrNull partout : une progression illisible ne doit pas emporter
+    // la fiche entière. Les épisodes s'affichent alors sans reprise.
+    final progressMap = ref.watch(progressByEpisodeProvider).valueOrNull ??
         const <String, WatchProgress>{};
 
     return CustomScrollView(
@@ -193,8 +195,8 @@ class _StartButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final episodes = ref.watch(episodesProvider(series.id)).value;
-    final progressMap = ref.watch(progressByEpisodeProvider).value ??
+    final episodes = ref.watch(episodesProvider(series.id)).valueOrNull;
+    final progressMap = ref.watch(progressByEpisodeProvider).valueOrNull ??
         const <String, WatchProgress>{};
     final target =
         episodes == null ? null : resumeEpisodeFor(episodes, progressMap);

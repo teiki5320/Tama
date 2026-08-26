@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../core/constants.dart';
+import 'playback_progress.dart';
 import '../../core/layout.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/poster.dart';
@@ -185,7 +186,10 @@ class _EpisodePlayerPageState extends ConsumerState<EpisodePlayerPage> {
     // aller-retour réseau à chaque swipe, pour un utilisateur connecté. On
     // ne retombe sur le dépôt que si elle n'a jamais été chargée — ouverture
     // du player par un lien direct.
-    final chargee = ref.read(progressByEpisodeProvider).value;
+    // valueOrNull : sur un AsyncError, `value` relance — la lecture
+    // échouerait pour une progression illisible. On retombe alors sur le
+    // dépôt, exactement comme si elle n'avait jamais été chargée.
+    final chargee = ref.read(progressByEpisodeProvider).valueOrNull;
     final saved = chargee != null
         ? chargee[widget.episode.id]
         : await _progressRepo.forEpisode(widget.episode.id);
@@ -232,22 +236,19 @@ class _EpisodePlayerPageState extends ConsumerState<EpisodePlayerPage> {
     final duration = controller.value.duration;
     if (duration <= Duration.zero) return;
     final position = controller.value.position;
-    final percent = (position.inMilliseconds / duration.inMilliseconds * 100)
-        .clamp(0, 100)
-        .round();
+    final percent = playbackPercent(position, duration);
 
-    for (final milestone in TamaConstants.progressMilestones) {
-      if (percent >= milestone && _milestonesSent.add(milestone)) {
-        _analytics.track(
-          'episode_progress',
-          episodeId: widget.episode.id,
-          seriesId: widget.series.id,
-          payload: {'percent': milestone},
-        );
-      }
+    for (final milestone in milestonesToEmit(percent, _milestonesSent)) {
+      _milestonesSent.add(milestone);
+      _analytics.track(
+        'episode_progress',
+        episodeId: widget.episode.id,
+        seriesId: widget.series.id,
+        payload: {'percent': milestone},
+      );
     }
 
-    if (!_completed && position >= duration - TamaConstants.completionEpsilon) {
+    if (!_completed && isCompletedAt(position, duration)) {
       _completed = true;
       _analytics.track(
         'episode_complete',
@@ -271,12 +272,10 @@ class _EpisodePlayerPageState extends ConsumerState<EpisodePlayerPage> {
     if (controller != null && controller.value.isInitialized) {
       controller.pause();
       if (_started && !_completed) {
-        final durationMs = controller.value.duration.inMilliseconds;
-        final percent = durationMs <= 0
-            ? 0
-            : (controller.value.position.inMilliseconds / durationMs * 100)
-                .clamp(0, 100)
-                .round();
+        final percent = playbackPercent(
+          controller.value.position,
+          controller.value.duration,
+        );
         _analytics.track(
           'episode_dropoff',
           episodeId: widget.episode.id,

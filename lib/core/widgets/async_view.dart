@@ -56,7 +56,7 @@ class ErrorView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.cloud_off_rounded,
-                size: 40, color: TamaColors.textMuted),
+                size: TamaSize.stateIcon, color: TamaColors.textMuted),
             const SizedBox(height: TamaSpacing.m),
             Text(
               message ?? 'Une erreur est survenue.',
@@ -104,7 +104,7 @@ class EmptyView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 40, color: TamaColors.textMuted),
+            Icon(icon, size: TamaSize.stateIcon, color: TamaColors.textMuted),
             const SizedBox(height: TamaSpacing.m),
             Text(title, style: TamaText.titleM, textAlign: TextAlign.center),
             if (subtitle != null) ...[

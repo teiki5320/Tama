@@ -163,7 +163,10 @@ class SectionHeader extends StatelessWidget {
           Text(title.toUpperCase(), style: TamaText.titleL),
           const SizedBox(width: TamaSpacing.s),
           Expanded(
-            child: Container(height: 3, color: couleur ?? TamaColors.accent),
+            child: Container(
+              height: TamaSize.rule,
+              color: couleur ?? TamaColors.accent,
+            ),
           ),
         ],
       ),

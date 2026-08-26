@@ -116,99 +116,103 @@ class _FeaturedBanner extends ConsumerWidget {
         TamaSpacing.l,
         TamaSpacing.xl,
       ),
-      child: GestureDetector(
-        onTap: () => context.push('/series/${series.id}'),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(TamaRadius.card),
-          child: SizedBox(
-            height: TamaLayout.bannerHeight(context),
-            width: double.infinity,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Le zoom lent est appliqué sous les voiles : le texte, lui,
-                // ne bouge pas.
-                Breathing(
-                  child: SeriesCover(
-                    series: series,
-                    borderRadius: BorderRadius.zero,
-                    showTitle: false,
-                  ),
-                ),
-                const DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: [0.3, 0.72, 1],
-                      colors: [
-                        Colors.transparent,
-                        TamaColors.scrim,
-                        TamaColors.background,
-                      ],
+      child: Semantics(
+        button: true,
+        label: 'À la une : ${series.title}',
+        child: GestureDetector(
+          onTap: () => context.push('/series/${series.id}'),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(TamaRadius.card),
+            child: SizedBox(
+              height: TamaLayout.bannerHeight(context),
+              width: double.infinity,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Le zoom lent est appliqué sous les voiles : le texte, lui,
+                  // ne bouge pas.
+                  Breathing(
+                    child: SeriesCover(
+                      series: series,
+                      borderRadius: BorderRadius.zero,
+                      showTitle: false,
                     ),
                   ),
-                ),
-                Positioned(
-                  left: TamaSpacing.l,
-                  right: TamaSpacing.l,
-                  bottom: TamaSpacing.l,
-                  // Sur grand écran, le bloc de titre ne s'étire pas sur
-                  // toute la largeur : il resterait illisible.
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxWidth: TamaLayout.readableWidth,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (series.genre != null)
-                            GenreChip(genre: series.genre!),
-                          const SizedBox(height: TamaSpacing.m),
-                          Text(
-                            series.title.toUpperCase(),
-                            style: TamaText.poster.copyWith(
-                              fontSize: TamaLayout.posterFontSize(context),
-                            ),
-                            maxLines: 3,
-                          ),
-                          if (series.synopsis != null) ...[
-                            const SizedBox(height: TamaSpacing.s),
-                            Text(
-                              series.synopsis!,
-                              style: TamaText.bodyMuted,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                          const SizedBox(height: TamaSpacing.l),
-                          Row(
-                            children: [
-                              FilledButton.icon(
-                                style: FilledButton.styleFrom(
-                                  backgroundColor:
-                                      TamaColors.forGenre(series.genre),
-                                ),
-                                onPressed: () =>
-                                    startWatching(context, ref, series),
-                                icon: const Icon(Icons.play_arrow_rounded),
-                                label: const Text('REGARDER'),
-                              ),
-                              const SizedBox(width: TamaSpacing.m),
-                              Text(
-                                '${series.totalEpisodes} ÉPISODES',
-                                style: TamaText.label,
-                              ),
-                            ],
-                          ),
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: [0.3, 0.72, 1],
+                        colors: [
+                          Colors.transparent,
+                          TamaColors.scrim,
+                          TamaColors.background,
                         ],
                       ),
                     ),
                   ),
-                ),
-              ],
+                  Positioned(
+                    left: TamaSpacing.l,
+                    right: TamaSpacing.l,
+                    bottom: TamaSpacing.l,
+                    // Sur grand écran, le bloc de titre ne s'étire pas sur
+                    // toute la largeur : il resterait illisible.
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxWidth: TamaLayout.readableWidth,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (series.genre != null)
+                              GenreChip(genre: series.genre!),
+                            const SizedBox(height: TamaSpacing.m),
+                            Text(
+                              series.title.toUpperCase(),
+                              style: TamaText.poster.copyWith(
+                                fontSize: TamaLayout.posterFontSize(context),
+                              ),
+                              maxLines: 3,
+                            ),
+                            if (series.synopsis != null) ...[
+                              const SizedBox(height: TamaSpacing.s),
+                              Text(
+                                series.synopsis!,
+                                style: TamaText.bodyMuted,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                            const SizedBox(height: TamaSpacing.l),
+                            Row(
+                              children: [
+                                FilledButton.icon(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor:
+                                        TamaColors.forGenre(series.genre),
+                                  ),
+                                  onPressed: () =>
+                                      startWatching(context, ref, series),
+                                  icon: const Icon(Icons.play_arrow_rounded),
+                                  label: const Text('REGARDER'),
+                                ),
+                                const SizedBox(width: TamaSpacing.m),
+                                Text(
+                                  '${series.totalEpisodes} ÉPISODES',
+                                  style: TamaText.label,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -260,20 +264,26 @@ class _ContinueCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final fraction = entry.progress.fractionOf(entry.episode.durationSeconds);
     final couleur = TamaColors.forGenre(entry.series.genre);
-    return GestureDetector(
-      onTap: () => context.push('/watch/${entry.episode.id}'),
-      child: SizedBox(
-        width: TamaLayout.posterWidth(context),
-        child: Stack(
-          children: [
-            Positioned.fill(child: SeriesCover(series: entry.series)),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: ProgressStroke(fraction: fraction, couleur: couleur),
-            ),
-          ],
+    return Semantics(
+      button: true,
+      label: 'Reprendre ${entry.series.title}, '
+          'épisode ${entry.episode.episodeNumber}',
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: () => context.push('/watch/${entry.episode.id}'),
+        child: SizedBox(
+          width: TamaLayout.posterWidth(context),
+          child: Stack(
+            children: [
+              Positioned.fill(child: SeriesCover(series: entry.series)),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: ProgressStroke(fraction: fraction, couleur: couleur),
+              ),
+            ],
+          ),
         ),
       ),
     );

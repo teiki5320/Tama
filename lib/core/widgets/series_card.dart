@@ -198,9 +198,17 @@ class SeriesCard extends StatelessWidget {
       aspectRatio: 9 / 14,
       child: SeriesCover(series: series),
     );
-    return GestureDetector(
-      onTap: () => context.push('/series/${series.id}'),
-      child: width == null ? card : SizedBox(width: width, child: card),
+    // Le titre est peint dans l'affiche : sans annonce explicite, un lecteur
+    // d'écran ne dit ni qu'il s'agit d'un bouton, ni de quelle série.
+    // `excludeSemantics` évite que le titre soit relu une seconde fois.
+    return Semantics(
+      button: true,
+      label: series.title,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: () => context.push('/series/${series.id}'),
+        child: width == null ? card : SizedBox(width: width, child: card),
+      ),
     );
   }
 }

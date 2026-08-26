@@ -103,6 +103,15 @@ abstract final class TamaRadius {
 }
 
 /// Échelle d'espacement.
+/// Dimensions graphiques qui ne sont ni des espacements ni des rayons.
+abstract final class TamaSize {
+  /// Icône au centre d'un état vide ou d'erreur.
+  static const double stateIcon = 40;
+
+  /// Épaisseur du filet qui prolonge un titre de section.
+  static const double rule = 3;
+}
+
 abstract final class TamaSpacing {
   static const double xs = 4;
   static const double s = 8;

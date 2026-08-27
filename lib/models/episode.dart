@@ -3,6 +3,7 @@ class Episode {
   const Episode({
     required this.id,
     required this.seriesId,
+    this.season = 1,
     required this.episodeNumber,
     this.title,
     required this.bunnyVideoId,
@@ -12,6 +13,10 @@ class Episode {
 
   final String id;
   final String seriesId;
+
+  /// Saison, à partir de 1. La numérotation des épisodes repart à 1 à
+  /// chaque saison, comme sur Netflix.
+  final int season;
   final int episodeNumber;
 
   /// Titre optionnel de l'épisode.
@@ -29,6 +34,7 @@ class Episode {
   factory Episode.fromJson(Map<String, dynamic> json) => Episode(
         id: json['id'] as String,
         seriesId: json['series_id'] as String,
+        season: (json['season'] as num?)?.toInt() ?? 1,
         episodeNumber: (json['episode_number'] as num).toInt(),
         title: json['title'] as String?,
         bunnyVideoId: json['bunny_video_id'] as String,

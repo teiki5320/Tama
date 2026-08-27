@@ -30,6 +30,7 @@ class SupabaseEpisodeRepository implements EpisodeRepository {
         .select()
         .eq('series_id', seriesId)
         .eq('is_published', true)
+        .order('season', ascending: true)
         .order('episode_number', ascending: true);
     return rows.map(Episode.fromJson).toList();
   }

@@ -47,13 +47,25 @@ class SeriesScreen extends ConsumerWidget {
   }
 }
 
-class _SeriesDetail extends ConsumerWidget {
+class _SeriesDetail extends ConsumerStatefulWidget {
   const _SeriesDetail({required this.series});
 
   final Series series;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SeriesDetail> createState() => _SeriesDetailState();
+}
+
+class _SeriesDetailState extends ConsumerState<_SeriesDetail> {
+  Series get series => widget.series;
+
+  /// Saison affichée dans la grille. Null tant que l'utilisateur n'a rien
+  /// choisi : on suit alors sa progression — la saison de l'épisode que le
+  /// bouton « Reprendre » proposerait, comme Netflix ouvre la bonne saison.
+  int? _selectedSeason;
+
+  @override
+  Widget build(BuildContext context) {
     final episodesAsync = ref.watch(episodesProvider(series.id));
     // valueOrNull partout : une progression illisible ne doit pas emporter
     // la fiche entière. Les épisodes s'affichent alors sans reprise.
@@ -149,22 +161,46 @@ class _SeriesDetail extends ConsumerWidget {
               onRetry: () => ref.invalidate(episodesProvider(series.id)),
             ),
           ),
-          data: (episodes) => episodes.isEmpty
-              ? const SliverToBoxAdapter(
-                  child: EmptyView(
-                    icon: Icons.video_library_outlined,
-                    title: 'Aucun épisode publié',
-                    subtitle: 'Les premiers épisodes arrivent bientôt.',
-                  ),
-                )
-              : SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    TamaSpacing.l,
-                    0,
-                    TamaSpacing.l,
-                    TamaSpacing.xxl,
-                  ),
-                  sliver: SliverGrid(
+          data: (episodes) {
+            if (episodes.isEmpty) {
+              return const SliverToBoxAdapter(
+                child: EmptyView(
+                  icon: Icons.video_library_outlined,
+                  title: 'Aucun épisode publié',
+                  subtitle: 'Les premiers épisodes arrivent bientôt.',
+                ),
+              );
+            }
+            final seasons = episodes.map((e) => e.season).toSet().toList()
+              ..sort();
+            // Sans choix explicite, la grille s'ouvre sur la saison en cours
+            // de visionnage — celle de l'épisode que « Reprendre » propose.
+            final current = _selectedSeason ??
+                resumeEpisodeFor(episodes, progressMap)?.season ??
+                seasons.first;
+            final shown = episodes.where((e) => e.season == current).toList();
+            return SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                TamaSpacing.l,
+                0,
+                TamaSpacing.l,
+                TamaSpacing.xxl,
+              ),
+              sliver: SliverMainAxisGroup(
+                slivers: [
+                  if (seasons.length > 1)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: TamaSpacing.m),
+                        child: _SeasonPicker(
+                          seasons: seasons,
+                          current: current,
+                          couleur: TamaColors.forGenre(series.genre),
+                          onChanged: (s) => setState(() => _selectedSeason = s),
+                        ),
+                      ),
+                    ),
+                  SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: TamaLayout.episodeColumns(context),
                       mainAxisSpacing: TamaSpacing.s,
@@ -172,16 +208,78 @@ class _SeriesDetail extends ConsumerWidget {
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (_, i) => _EpisodeCell(
-                        episode: episodes[i],
-                        progress: progressMap[episodes[i].id],
+                        episode: shown[i],
+                        progress: progressMap[shown[i].id],
                         couleur: TamaColors.forGenre(series.genre),
                       ),
-                      childCount: episodes.length,
+                      childCount: shown.length,
                     ),
                   ),
-                ),
+                ],
+              ),
+            );
+          },
         ),
       ],
+    );
+  }
+}
+
+/// Sélecteur de saison, façon Netflix : un bouton « Saison N ⌄ » qui ouvre
+/// une feuille listant les saisons, plutôt qu'une rangée d'onglets — le
+/// geste que le public connaît déjà.
+class _SeasonPicker extends StatelessWidget {
+  const _SeasonPicker({
+    required this.seasons,
+    required this.current,
+    required this.couleur,
+    required this.onChanged,
+  });
+
+  final List<int> seasons;
+  final int current;
+  final Color couleur;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: OutlinedButton.icon(
+        onPressed: () => showModalBottomSheet<void>(
+          context: context,
+          backgroundColor: TamaColors.surface,
+          builder: (sheet) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final s in seasons)
+                  ListTile(
+                    title: Text(
+                      'Saison $s',
+                      style: s == current
+                          ? TamaText.body.copyWith(
+                              color: couleur,
+                              fontWeight: FontWeight.bold,
+                            )
+                          : TamaText.body,
+                    ),
+                    trailing: s == current
+                        ? Icon(Icons.check_rounded, color: couleur)
+                        : null,
+                    onTap: () {
+                      Navigator.pop(sheet);
+                      onChanged(s);
+                    },
+                  ),
+              ],
+            ),
+          ),
+        ),
+        icon: Text('Saison $current', style: TamaText.body),
+        label: const Icon(Icons.expand_more_rounded,
+            color: TamaColors.text, size: TamaSize.stateIcon / 2),
+      ),
     );
   }
 }

@@ -84,14 +84,18 @@ const List<String> _serie1Titles = [
   'Le prix à payer',
 ];
 
-/// Génère la liste d'épisodes d'une série de démo.
+/// Génère la liste d'épisodes d'une saison d'une série de démo.
 List<Episode> _makeEpisodes(String seriesId, int count,
-    {List<String> titles = const []}) {
+    {int season = 1, List<String> titles = const []}) {
   return List.generate(count, (i) {
     final number = i + 1;
+    // L'identifiant garde sa forme historique en saison 1 : la progression
+    // de démo pré-remplie pointe sur « demo-serie-1-ep3 ».
+    final suffix = season == 1 ? 'ep$number' : 's$season-ep$number';
     return Episode(
-      id: '$seriesId-ep$number',
+      id: '$seriesId-$suffix',
       seriesId: seriesId,
+      season: season,
       episodeNumber: number,
       title: i < titles.length ? titles[i] : null,
       bunnyVideoId: 'demo',
@@ -107,6 +111,13 @@ final Map<String, List<Episode>> mockEpisodes = {
       s.totalEpisodes,
       titles: s.id == 'demo-serie-1' ? _serie1Titles : const [],
     ),
+  // La série mise en avant a deux saisons : c'est elle qui fait voir le
+  // sélecteur façon Netflix sur la fiche, dès le mode démo.
+  // 4 + 4 : le compte rejoint le `totalEpisodes: 8` déclaré plus haut.
+  'demo-serie-1': [
+    ..._makeEpisodes('demo-serie-1', 4, titles: _serie1Titles),
+    ..._makeEpisodes('demo-serie-1', 4, season: 2),
+  ],
 };
 
 /// Progression pré-remplie en mode démo, pour que le rail « Reprendre »

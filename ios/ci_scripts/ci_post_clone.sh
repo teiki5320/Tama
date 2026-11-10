@@ -95,6 +95,21 @@ else
   exit 1
 fi
 
+# Xcode 27 n'accepte plus de cible inférieure à iOS 15 : les Pods générés
+# (Pods-Runner, audioplayers_darwin…) restaient à 13.0 et l'archive échouait
+# (« deployment target 13.0 … supported 15.0 to 27.2 »). On aligne le Podfile
+# généré par Flutter sur iOS 15 avant pod install.
+PODFILE="$PROJECT_DIR/ios/Podfile"
+if [ -f "$PODFILE" ]; then
+  sed -i '' -E "s/^#? *platform :ios.*/platform :ios, '15.0'/" "$PODFILE"
+  if ! grep -q "IPHONEOS_DEPLOYMENT_TARGET" "$PODFILE"; then
+    sed -i '' "s/^\(  *\)flutter_additional_ios_build_settings(target)/&\\
+\1target.build_configurations.each { |c| c.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0' }/" "$PODFILE"
+  fi
+  echo "ℹ️  Podfile aligné sur iOS 15 :"
+  grep -n "platform :ios\|IPHONEOS_DEPLOYMENT_TARGET" "$PODFILE" || true
+fi
+
 echo "📦 pod install"
 if ! command -v pod > /dev/null 2>&1; then
   HOMEBREW_NO_AUTO_UPDATE=1 brew install cocoapods

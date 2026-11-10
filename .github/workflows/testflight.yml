@@ -149,7 +149,7 @@ jobs:
 
       - name: IPA en artefact (dépannage)
         if: ${{ !inputs.dry_run && always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tama-ipa
           path: build/ios/ipa/*.ipa
